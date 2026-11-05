@@ -38,7 +38,7 @@ function machine({os = 'Darwin', hardware = '1', arch = 'arm64', tools = ['node'
   copyFileSync(join(here, 'requirements.txt'), join(skill, 'requirements.txt'));
   if (voice) {
     mkdirSync(join(skill, 'voices'));
-    writeFileSync(join(skill, 'voices/ref-tanya-s45.wav'), '');
+    writeFileSync(join(skill, 'voices/mine.wav'), '');
   }
   script(join(bin, 'uname'), `[ "$1" = -s ] && echo ${os} || echo ${arch}`);
   script(join(bin, 'sysctl'), `echo ${hardware}`);
@@ -194,17 +194,17 @@ test('a failing model step fails the install', () => {
   m.cleanup();
 });
 
-test('a missing voice is named, without failing the machine setup', () => {
+test('no voice yet: says how to add one, without failing the machine setup', () => {
   const m = machine({voice: false});
   const result = m.run();
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /Still missing: .*ref-tanya-s45\.wav.*ask the owner/);
+  assert.match(result.stdout, /No narration voice yet\. Add a recording with: .*add_voice\.py <name> <recording>/);
   m.cleanup();
 });
 
-test('with the voice in place, nothing is reported missing', () => {
+test('with a voice in place, nothing is said about voices', () => {
   const m = machine();
   const result = m.run();
-  assert.doesNotMatch(result.stdout, /Still missing/);
+  assert.doesNotMatch(result.stdout, /voice/);
   m.cleanup();
 });
