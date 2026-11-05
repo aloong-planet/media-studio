@@ -14,7 +14,7 @@ Claude Code skills for making explainer videos. The skill instructions are writt
 - One person speaking in a quiet room, with no music, between 3 and 30 seconds long, in any format `ffmpeg` can read.
 - Your own voice, or one you have permission to use.
 
-The skill adds the recording for you and keeps it in `skills/video-tutorial/voices/`, which git ignores, so it stays on your machine.
+The skill asks where the recording is and what it says, then keeps a converted copy in `skills/video-tutorial/voices/`. Git ignores that folder, so the copy stays on your machine, and your original file is not changed. If you do not know what the recording says, Whisper writes it down and you check the result.
 
 `video-tutorial` also needs:
 
