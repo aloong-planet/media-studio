@@ -27,10 +27,24 @@ The skill asks where the recording is and what it says, then keeps a converted c
 
 ## Install
 
-This needs Node.js 22.20 or later. It installs both skills for Claude Code in every project. Keep both, because `video-tutorial` calls `diagram-design`.
+This needs Node.js 22.20 or later. Run one of these commands. Each installs both skills for every project and asks no questions. Keep both skills, because `video-tutorial` calls `diagram-design`.
+
+For Claude Code only, with the files in `~/.claude/skills/`:
 
 ```sh
-npx skills add aloong-planet/media-studio -g -a claude-code --skill '*' -y
+npx skills add aloong-planet/media-studio -g -a claude-code -y
+```
+
+For other agents that read `~/.agents/skills/`, with the files there. Claude Code does not read that folder, and these skills have only been tested with Claude Code:
+
+```sh
+npx skills add aloong-planet/media-studio -g -a universal -y
+```
+
+For both, with the files in `~/.agents/skills/` and links to them in `~/.claude/skills/`:
+
+```sh
+npx skills add aloong-planet/media-studio -g -a claude-code -a universal -y
 ```
 
 Then ask Claude Code for an explainer video, or run `/video-tutorial`. It confirms the requirements with you before it starts, including which voice to use, and renders the mp4 only after you approve the preview.
