@@ -383,7 +383,7 @@ def preflight() -> None:
     }
     missing = [f"{name}: {path}" for name, path in needs.items() if not path.exists()]
     if missing:
-        raise SystemExit("Missing (run install.sh in the video-tutorial skill folder; for the reference voice, ask the owner):\n  " + "\n  ".join(missing))
+        raise SystemExit("Missing (run install.sh in the video-tutorial skill folder; for the reference voice, stop and ask which voice to use):\n  " + "\n  ".join(missing))
     problems = script_problems(SCRIPT["segments"])
     if problems:
         raise SystemExit("script.json:\n  " + "\n  ".join(problems))

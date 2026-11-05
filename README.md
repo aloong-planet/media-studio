@@ -9,7 +9,12 @@ Claude Code skills for making explainer videos. The skill instructions are writt
 
 ## Before you start
 
-**The reference voice is not included.** `video-tutorial` narrates with a reference voice that stays with its owner, and there is no option for another voice yet. `new-project.sh` stops until `skills/video-tutorial/voices/ref-tanya-s45.wav` exists, so you cannot start a video without that file.
+`video-tutorial` narrates in a voice you provide, so have a recording ready:
+
+- One person speaking in a quiet room, with no music, between 3 and 30 seconds long, in any format `ffmpeg` can read.
+- Your own voice, or one you have permission to use.
+
+The skill asks where the recording is and what it says, then keeps a converted copy in `skills/video-tutorial/voices/`. Git ignores that folder, so the copy stays on your machine, and your original file is not changed. If you do not know what the recording says, Whisper writes it down and you check the result.
 
 `video-tutorial` also needs:
 
@@ -29,7 +34,7 @@ ln -s ~/media-studio/skills/video-tutorial ~/.claude/skills/video-tutorial
 ln -s ~/media-studio/skills/diagram-design ~/.claude/skills/diagram-design
 ```
 
-Then ask Claude Code for an explainer video, or run `/video-tutorial`. It confirms the requirements with you before it starts, and renders the mp4 only after you approve the preview.
+Then ask Claude Code for an explainer video, or run `/video-tutorial`. It confirms the requirements with you before it starts, including which voice to use, and renders the mp4 only after you approve the preview.
 
 ## What `install.sh` adds
 

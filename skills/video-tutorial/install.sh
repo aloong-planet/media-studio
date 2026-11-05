@@ -46,5 +46,4 @@ fi
 "$python" -I "$here/install_models.py"
 
 echo "Python environment and models are ready."
-voice="$here/voices/ref-tanya-s45.wav"
-[ -f "$voice" ] || echo "Still missing: $voice. new-project.sh stops without this voice, which does not arrive with a clone: ask the owner."
+ls "$here"/voices/*.wav >/dev/null 2>&1 || echo "No narration voice yet. Add a recording with: $python -I $here/add_voice.py <name> <recording> [the words it says]"

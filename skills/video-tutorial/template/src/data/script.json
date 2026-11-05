@@ -8,8 +8,8 @@
   },
   "voice": {
     "model": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit",
-    "ref": "voices/ref-tanya-s45.wav",
-    "refText": "查订阅表：这是新问题，没有订阅者。Router 的语义层判断，这是缺陷反馈，值得处理。",
+    "ref": "voices/set-by-new-project.wav",
+    "refText": "set by new-project.sh",
     "lang": "auto",
     "maxTokens": 750,
     "temperature": 0
