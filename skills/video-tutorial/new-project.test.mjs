@@ -13,23 +13,34 @@ const scriptFile = 'src/data/script.json';
 function setUp() {
   const root = mkdtempSync(join(tmpdir(), 'vt-new-project-'));
   const skill = join(root, 'skill');
+  const home = join(root, 'home');
+  const voices = join(home, '.video-tutorial/voices');
   const bin = join(root, 'bin');
-  mkdirSync(join(skill, 'voices'), {recursive: true});
+  const installSkill = () => {
+    mkdirSync(skill);
+    copyFileSync(join(here, 'new-project.sh'), join(skill, 'new-project.sh'));
+    cpSync(join(here, 'template'), join(skill, 'template'), {recursive: true, filter: (path) => !path.includes('node_modules')});
+  };
+  installSkill();
+  mkdirSync(voices, {recursive: true});
   mkdirSync(bin);
-  copyFileSync(join(here, 'new-project.sh'), join(skill, 'new-project.sh'));
-  cpSync(join(here, 'template'), join(skill, 'template'), {recursive: true, filter: (path) => !path.includes('node_modules')});
   writeFileSync(join(bin, 'pnpm'), '#!/bin/sh\nexit 0\n');
   chmodSync(join(bin, 'pnpm'), 0o755);
   return {
     root,
-    skill,
+    voices,
     target: join(root, 'video'),
     addVoice(name, bytes, words) {
-      writeFileSync(join(skill, 'voices', `${name}.wav`), bytes);
-      writeFileSync(join(skill, 'voices', `${name}.txt`), words);
+      writeFileSync(join(voices, `${name}.wav`), bytes);
+      writeFileSync(join(voices, `${name}.txt`), words);
+    },
+    // What `skills update` does: empties the skill folder, then copies the new version in.
+    updateSkill() {
+      rmSync(skill, {recursive: true});
+      installSkill();
     },
     run: (...args) => spawnSync('/bin/sh', [join(skill, 'new-project.sh'), ...args], {
-      env: {HOME: join(root, 'home'), PATH: `${bin}:${process.env.PATH}`},
+      env: {HOME: home, PATH: `${bin}:${process.env.PATH}`},
       encoding: 'utf8',
     }),
     cleanup: () => rmSync(root, {recursive: true, force: true}),
@@ -47,6 +58,16 @@ test('the chosen voice is copied into the project and written into the script', 
   const {voice} = JSON.parse(readFileSync(join(m.target, scriptFile), 'utf8'));
   assert.equal(voice.ref, 'voices/mine.wav');
   assert.equal(voice.refText, '这是我的声音。');
+  m.cleanup();
+});
+
+test('a voice outlives an update of the skill', () => {
+  const m = setUp();
+  m.addVoice('mine', 'mine-audio', '这是我的声音。\n');
+  m.updateSkill();
+  const result = m.run(m.target, 'mine');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(readFileSync(join(m.target, 'voices/mine.wav'), 'utf8'), 'mine-audio');
   m.cleanup();
 });
 
@@ -78,25 +99,25 @@ test('an unknown voice stops before anything is written, and names the voices th
   const result = m.run(m.target, 'nobody');
   assert.equal(result.status, 1);
   assert.match(result.stderr, /No voice named nobody\. Voices on this machine: mine other/);
-  assert.match(result.stderr, /add_voice\.py/);
+  assert.match(result.stderr, /Voices are kept in .*\/home\/\.video-tutorial\/voices\. Add one with add_voice\.py/);
   assert.equal(existsSync(m.target), false);
   m.cleanup();
 });
 
 test('a machine with no voices at all is told how to add one', () => {
   const m = setUp();
-  rmSync(join(m.skill, 'voices'), {recursive: true});
+  rmSync(dirname(m.voices), {recursive: true});
   const result = m.run(m.target, 'mine');
   assert.equal(result.status, 1);
   assert.match(result.stderr, /No voice named mine/);
-  assert.match(result.stderr, /add_voice\.py/);
+  assert.match(result.stderr, /Voices are kept in .*\/home\/\.video-tutorial\/voices\. Add one with add_voice\.py/);
   assert.equal(existsSync(m.target), false);
   m.cleanup();
 });
 
 test('a voice with no words is not a voice', () => {
   const m = setUp();
-  writeFileSync(join(m.skill, 'voices/mine.wav'), 'audio');
+  writeFileSync(join(m.voices, 'mine.wav'), 'audio');
   const result = m.run(m.target, 'mine');
   assert.equal(result.status, 1);
   assert.match(result.stderr, /No voice named mine/);
