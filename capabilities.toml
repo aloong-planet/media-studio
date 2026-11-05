@@ -1,0 +1,20 @@
+client-framework = "none"
+working-language = "en"
+
+[lint]
+enabled = false
+
+[e2e-suite]
+enabled = false
+
+[i18n]
+enabled = false
+
+[enumeration-wording-gate]
+enabled = false
+
+[mutation-testing]
+enabled = false
+
+[theming]
+enabled = false

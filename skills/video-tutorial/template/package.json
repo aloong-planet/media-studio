@@ -1,0 +1,30 @@
+{
+  "name": "video-tutorial",
+  "private": true,
+  "scripts": {
+    "fonts": "node scripts/fonts.mjs",
+    "narrate": "$HOME/.venv/mlx-tts/bin/python -I scripts/narrate.py",
+    "studio": "remotion studio src/index.ts",
+    "check": "tsc --noEmit && node scripts/fonts.mjs --check && $HOME/.venv/mlx-tts/bin/python -m unittest discover -s scripts && node --test scripts/",
+    "stills": "node scripts/stills.mjs",
+    "approve": "node scripts/gate.mjs",
+    "render": "node scripts/render.mjs",
+    "verify": "$HOME/.venv/mlx-tts/bin/python -I scripts/verify.py"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.540",
+    "@remotion/cli": "4.0.540",
+    "@remotion/fonts": "4.0.540",
+    "@remotion/paths": "4.0.540",
+    "@remotion/renderer": "4.0.540",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.540"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}

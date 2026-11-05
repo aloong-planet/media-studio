@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "slug": "sample-request-path",
+    "title": "一次请求的路径图",
+    "subtitle": "跟着两种情况各走一遍，看请求会不会落到数据库",
+    "unit": "情况",
+    "outro": {"heading": "两种情况，两条路径", "sources": ["示例内容，用来试跑模板"]}
+  },
+  "voice": {
+    "model": "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit",
+    "ref": "voices/ref-tanya-s45.wav",
+    "refText": "查订阅表：这是新问题，没有订阅者。Router 的语义层判断，这是缺陷反馈，值得处理。",
+    "lang": "auto",
+    "maxTokens": 750,
+    "temperature": 0
+  },
+  "fps": 30,
+  "chapters": {
+    "intro": {"label": "总览", "sub": "请求从左到右的路径，颜色对应图例"},
+    "hit": {"no": 1, "tab": "缓存命中", "source": "用户刷新页面", "quote": "刚看过的页面再打开一次", "plain": true, "result": "不碰数据库"},
+    "miss": {"no": 2, "tab": "缓存未命中", "source": "用户第一次打开", "quote": "第一次打开这个页面", "plain": true, "result": "读一次数据库"},
+    "outro": {"label": "小结"}
+  },
+  "segments": [
+    {"id": "title", "take": "title", "chapter": "intro", "kind": "title", "lines": [{"say": "这是一次请求的路径图。"}, {"say": "我们跟着两种情况各走一遍，"}, {"say": "看请求会不会落到数据库。"}]},
+    {"id": "tour-1", "take": "tour", "chapter": "intro", "kind": "tour", "cam": "full", "n": ["client", "gateway"], "e": ["e-req"], "flows": [{"p": "e-req", "cue": 0}], "lines": [{"say": "请求从客户端进来，先到网关。"}]},
+    {"id": "tour-2", "take": "tour", "chapter": "intro", "kind": "tour", "cam": "full", "n": ["cache", "service", "db"], "e": ["e-hit", "e-miss", "e-db"], "flows": [{"p": "e-hit", "cue": 0}, {"p": "e-miss", "cue": 1}], "lines": [{"say": "网关先查缓存，"}, {"say": "查不到再交给业务服务。"}]},
+    {"id": "hit-card", "take": "hit", "chapter": "hit", "kind": "card", "lines": [{"say": "第一种，缓存命中。"}, {"say": "用户把刚看过的页面又打开了一次。"}]},
+    {"id": "hit-1", "take": "hit", "chapter": "hit", "kind": "step", "at": [255, 216], "n": ["client", "gateway"], "e": ["e-req"], "flows": [{"p": "e-req", "cue": 0}], "lines": [{"say": "请求到达网关。"}]},
+    {"id": "hit-2", "take": "hit", "chapter": "hit", "kind": "step", "at": [414, 130], "n": ["cache"], "e": ["e-hit"], "flows": [{"p": "e-hit", "cue": 0}], "lines": [{"say": "缓存里有这份数据，"}, {"say": "直接返回，不碰数据库。"}]},
+    {"id": "hit-wrap", "chapter": "hit", "kind": "wrap", "hold": 1.6},
+    {"id": "miss-card", "take": "miss", "chapter": "miss", "kind": "card", "lines": [{"say": "第二种，缓存未命中。"}, {"say": "用户第一次打开这个页面。"}]},
+    {"id": "miss-1", "take": "miss", "chapter": "miss", "kind": "step", "at": [255, 216], "n": ["client", "gateway"], "e": ["e-req"], "flows": [{"p": "e-req", "cue": 0}], "lines": [{"say": "请求先到网关。"}, {"say": "缓存里没有这份数据。"}]},
+    {"id": "miss-2", "take": "miss", "chapter": "miss", "kind": "step", "at": [414, 322], "n": ["service"], "e": ["e-miss"], "flows": [{"p": "e-miss", "cue": 0}], "lines": [{"say": "网关把请求交给业务服务。"}]},
+    {"id": "miss-3", "take": "miss", "chapter": "miss", "kind": "step", "at": [875, 386], "n": ["db"], "e": ["e-db"], "flows": [{"p": "e-db", "cue": 0}], "lines": [{"say": "业务服务读数据库，"}, {"say": "再把结果写回缓存。"}]},
+    {"id": "miss-wrap", "chapter": "miss", "kind": "wrap", "hold": 1.6},
+    {"id": "outro", "take": "outro", "chapter": "outro", "kind": "outro", "tail": 2.5, "lines": [{"say": "两种情况，两条路径。"}, {"say": "缓存命中，直接返回。"}, {"say": "缓存未命中，读一次数据库。"}]}
+  ]
+}

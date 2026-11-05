@@ -1,0 +1,7 @@
+.DS_Store
+
+# Working records stay on the machine; never committed.
+/docs/.workings/
+
+# The cloned voice stays on this machine; never committed.
+/skills/video-tutorial/voices/
