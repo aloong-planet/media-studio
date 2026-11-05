@@ -1,4 +1,4 @@
-"""Adds a narration voice to this skill: <name>.wav in the format the narration reads, and <name>.txt with the words it says.
+"""Adds a narration voice to this machine: <name>.wav in the format the narration reads, and <name>.txt with the words it says.
 
 usage: ~/.venv/mlx-tts/bin/python -I add_voice.py <name> <recording> [the words it says]
 Without the words, Whisper writes them down from the recording.
@@ -14,7 +14,7 @@ import tempfile
 import wave
 
 HERE = pathlib.Path(__file__).resolve().parent
-VOICES = HERE / "voices"
+VOICES = pathlib.Path.home() / ".video-tutorial/voices"  # Not in the skill folder: `npx skills` empties that on every update.
 TRANSCRIBER = HERE / "template/scripts/transcribe_whisper.py"
 WHISPER = pathlib.Path.home() / ".cache/mlx-tts/whisper-large-v3-turbo-asr-fp16"
 PROMPT = "以下是普通话的句子。"
@@ -67,7 +67,7 @@ def add(name: str, recording: str, given: str | None) -> str:
     audio, words = VOICES / f"{name}.wav", VOICES / f"{name}.txt"
     if audio.exists() or words.exists():
         raise Refused(f"Voice {name} already exists and was left unchanged. Pick another name.")
-    VOICES.mkdir(exist_ok=True)
+    VOICES.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=VOICES) as folder:  # On the same disk, so the finished files can be moved into place.
         new_audio, new_words = pathlib.Path(folder) / "voice.wav", pathlib.Path(folder) / "voice.txt"
         convert(recording, new_audio)

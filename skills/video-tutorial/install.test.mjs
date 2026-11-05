@@ -24,7 +24,7 @@ case "$*" in
   *"-c "*) if [ -f "$FAIL_IMPORT" ]; then echo "Traceback"; echo "ModuleNotFoundError: No module named 'mlx_audio'"; exit 1; fi ;;
 esac`;
 
-function machine({os = 'Darwin', hardware = '1', arch = 'arm64', tools = ['node', 'pnpm', 'ffmpeg', 'ffprobe'], python312 = 'arm64', voice = true} = {}) {
+function machine({os = 'Darwin', hardware = '1', arch = 'arm64', tools = ['node', 'pnpm', 'ffmpeg', 'ffprobe'], python312 = 'arm64', voice = false} = {}) {
   const root = mkdtempSync(join(tmpdir(), 'vt-install-'));
   const home = join(root, 'home');
   const skill = join(root, 'skill');
@@ -37,8 +37,8 @@ function machine({os = 'Darwin', hardware = '1', arch = 'arm64', tools = ['node'
   copyFileSync(join(here, 'install.sh'), join(skill, 'install.sh'));
   copyFileSync(join(here, 'requirements.txt'), join(skill, 'requirements.txt'));
   if (voice) {
-    mkdirSync(join(skill, 'voices'));
-    writeFileSync(join(skill, 'voices/mine.wav'), '');
+    mkdirSync(join(home, '.video-tutorial/voices'), {recursive: true});
+    writeFileSync(join(home, '.video-tutorial/voices/mine.wav'), '');
   }
   script(join(bin, 'uname'), `[ "$1" = -s ] && echo ${os} || echo ${arch}`);
   script(join(bin, 'sysctl'), `echo ${hardware}`);
@@ -195,7 +195,7 @@ test('a failing model step fails the install', () => {
 });
 
 test('no voice yet: says how to add one, without failing the machine setup', () => {
-  const m = machine({voice: false});
+  const m = machine();
   const result = m.run();
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /No narration voice yet\. Add a recording with: .*add_voice\.py <name> <recording>/);
@@ -203,7 +203,7 @@ test('no voice yet: says how to add one, without failing the machine setup', () 
 });
 
 test('with a voice in place, nothing is said about voices', () => {
-  const m = machine();
+  const m = machine({voice: true});
   const result = m.run();
   assert.doesNotMatch(result.stdout, /voice/);
   m.cleanup();

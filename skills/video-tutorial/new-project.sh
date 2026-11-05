@@ -5,11 +5,12 @@ here=$(cd "$(dirname "$0")" && pwd)
 usage="usage: new-project.sh <new or empty directory> <voice name>"
 target=${1:?$usage}
 name=${2:?$usage}
-voice="$here/voices/$name.wav"
-words="$here/voices/$name.txt"
+voices="$HOME/.video-tutorial/voices"
+voice="$voices/$name.wav"
+words="$voices/$name.txt"
 if [ ! -f "$voice" ] || [ ! -f "$words" ]; then
-  echo "No voice named $name. Voices on this machine: $(ls "$here/voices" 2>/dev/null | sed -n 's/\.wav$//p' | tr '\n' ' ')" >&2
-  echo "Voices are kept out of git. Add one with add_voice.py, in the same folder as this script." >&2
+  echo "No voice named $name. Voices on this machine: $(ls "$voices" 2>/dev/null | sed -n 's/\.wav$//p' | tr '\n' ' ')" >&2
+  echo "Voices are kept in $voices. Add one with add_voice.py, in the same folder as this script." >&2
   exit 1
 fi
 if [ -e "$target" ] && [ -n "$(ls -A "$target")" ]; then

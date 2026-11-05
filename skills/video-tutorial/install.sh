@@ -46,4 +46,4 @@ fi
 "$python" -I "$here/install_models.py"
 
 echo "Python environment and models are ready."
-ls "$here"/voices/*.wav >/dev/null 2>&1 || echo "No narration voice yet. Add a recording with: $python -I $here/add_voice.py <name> <recording> [the words it says]"
+ls "$HOME"/.video-tutorial/voices/*.wav >/dev/null 2>&1 || echo "No narration voice yet. Add a recording with: $python -I $here/add_voice.py <name> <recording> [the words it says]"

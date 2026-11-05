@@ -14,7 +14,7 @@ Claude Code skills for making explainer videos. The skill instructions are writt
 - One person speaking in a quiet room, with no music, between 3 and 30 seconds long, in any format `ffmpeg` can read.
 - Your own voice, or one you have permission to use.
 
-The skill asks where the recording is and what it says, then keeps a converted copy in `skills/video-tutorial/voices/`. Git ignores that folder, so the copy stays on your machine, and your original file is not changed. If you do not know what the recording says, Whisper writes it down and you check the result.
+The skill asks where the recording is and what it says, then keeps a converted copy in `~/.video-tutorial/voices/`. The copy stays on your machine, updating the skills leaves it in place, and your original file is not changed. If you do not know what the recording says, Whisper writes it down and you check the result.
 
 `video-tutorial` also needs:
 
@@ -27,14 +27,36 @@ The skill asks where the recording is and what it says, then keeps a converted c
 
 ## Install
 
+This needs Node.js 22.20 or later. Run one of these commands. Each installs both skills for every project and asks no questions. Keep both skills, because `video-tutorial` calls `diagram-design`.
+
+For Claude Code only, with the files in `~/.claude/skills/`:
+
 ```sh
-git clone https://github.com/aloong-planet/media-studio.git ~/media-studio
-mkdir -p ~/.claude/skills
-ln -s ~/media-studio/skills/video-tutorial ~/.claude/skills/video-tutorial
-ln -s ~/media-studio/skills/diagram-design ~/.claude/skills/diagram-design
+npx skills add aloong-planet/media-studio -g -a claude-code -y
+```
+
+For other agents that read `~/.agents/skills/`, with the files there. Claude Code does not read that folder, and these skills have only been tested with Claude Code:
+
+```sh
+npx skills add aloong-planet/media-studio -g -a universal -y
+```
+
+For both, with the files in `~/.agents/skills/` and links to them in `~/.claude/skills/`:
+
+```sh
+npx skills add aloong-planet/media-studio -g -a claude-code -a universal -y
 ```
 
 Then ask Claude Code for an explainer video, or run `/video-tutorial`. It confirms the requirements with you before it starts, including which voice to use, and renders the mp4 only after you approve the preview.
+
+To update or remove the skills:
+
+```sh
+npx skills update video-tutorial diagram-design -g
+npx skills remove video-tutorial diagram-design -g -y
+```
+
+Removing the skills does not delete your voices, the Python environment or the models. To delete your voices, remove `~/.video-tutorial`.
 
 ## What `install.sh` adds
 
@@ -47,7 +69,7 @@ Downloads try `huggingface.co` first, then `hf-mirror.com` if that fails or writ
 
 ## What leaves your machine
 
-Narration and transcription run locally, so the script is not sent to an online service. `pnpm fonts` sends Google Fonts only the set of characters used.
+Narration and transcription run locally, so the script is not sent to an online service. `pnpm fonts` sends Google Fonts only the set of characters used. `npx skills` sends anonymous usage data, including the repository and skill names; set `DISABLE_TELEMETRY=1` to turn that off.
 
 ## License
 

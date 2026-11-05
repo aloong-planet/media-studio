@@ -35,7 +35,7 @@ class AddVoice(unittest.TestCase):
         self.root = pathlib.Path(folder.name)
         self.home = self.root / "home"
         self.skill = self.root / "skill"
-        self.voices = self.skill / "voices"
+        self.voices = self.home / ".video-tutorial/voices"
         self.log = self.root / "whisper.log"
         self.whisper = self.home / ".cache/mlx-tts/whisper-large-v3-turbo-asr-fp16"
         self.whisper.mkdir(parents=True)
@@ -77,6 +77,12 @@ class AddVoice(unittest.TestCase):
             self.assertEqual((audio.getframerate(), audio.getnchannels(), audio.getsampwidth()), (24000, 1, 2))
             self.assertAlmostEqual(audio.getnframes() / audio.getframerate(), 6.0, delta=0.2)
 
+    def test_a_voice_is_kept_outside_the_skill_folder_so_an_update_cannot_delete_it(self):
+        self.assertEqual(self.run_it("mine", self.recording(), "这是我的声音。").returncode, 0)
+        self.assertEqual(sorted(p.name for p in self.skill.iterdir()), ["add_voice.py", "template"])
+        shutil.rmtree(self.skill)
+        self.assertEqual(self.voice_files(), ["mine.txt", "mine.wav"])
+
     def test_given_words_are_kept_and_whisper_is_not_run(self):
         result = self.run_it("mine", self.recording(), "  这是我的声音。 ")
         self.assertEqual((self.voices / "mine.txt").read_text("utf-8"), "这是我的声音。\n")
@@ -91,6 +97,7 @@ class AddVoice(unittest.TestCase):
         self.assertEqual(self.whisper_runs()[0]["offline"], "1")
         self.assertIn("请求先到网关：这是第一次打开，缓存里没有。", result.stdout)
         self.assertIn("may be wrong", result.stdout)
+        self.assertIn(str(self.voices / "mine.txt"), result.stdout)
 
     def test_whisper_hears_the_converted_audio_not_the_original(self):
         self.run_it("mine", self.recording())
@@ -141,6 +148,7 @@ class AddVoice(unittest.TestCase):
             with self.subTest(name=name):
                 self.refused(self.run_it(name, self.recording(), "名字不对。"), "Bad voice name")
         self.assertEqual(sorted(p.name for p in self.skill.iterdir()), ["add_voice.py", "template"])
+        self.assertFalse((self.home / ".video-tutorial").exists())
 
     def test_nothing_heard_is_refused_and_leaves_no_voice(self):
         self.refused(self.run_it("mine", self.recording(), hears=""), "nothing was heard")
