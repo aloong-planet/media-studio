@@ -56,7 +56,7 @@ npx skills add aloong-planet/media-studio -g -a claude-code -a universal -y
 
 Then ask Claude Code for an explainer video, or run `/video-tutorial`. It confirms the requirements with you before it starts, including which voice to use, and renders the mp4 only after you approve the preview.
 
-For an app introduction, invoke `$app-demo-video` in Codex or `/app-demo-video` in Claude Code. The first deliverable is the script for review; narration and animation production follow approval. Ask for Chinese explicitly to change the default language.
+For an app introduction, invoke `$app-demo-video` in Codex or `/app-demo-video` in Claude Code. The first deliverable is the script for review; narration and animation production follow approval. Ask for Chinese explicitly to change the default language. Language versions use separate project directories. Chinese adaptation includes a shot-by-shot [localization checklist and verification](skills/app-demo-video/references/visuals.md#素材本地化清单), covering visible text, real app recordings, subtitles and covers as well as narration. Existing source-language projects remain unchanged.
 
 To update or remove the skills:
 
