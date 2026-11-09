@@ -10,7 +10,7 @@ Agent skills for making app demos and explainer videos. The skill instructions a
 
 ## Before you start
 
-`app-demo-video` starts with a script for your review, designs the animation from that approved script, then generates narration. It uses Remotion for a 16:9 video with restrained motion, small subtitles and quiet background music. It includes production instructions and presets, not an executable project generator.
+`app-demo-video` starts with a script for your review, designs the animation from that approved script, then generates narration. It uses Remotion for a 16:9 video with restrained motion, small subtitles and quiet background music. It includes production instructions and presets, not an executable project generator. Output locations and the project file layout are defined in the skill’s [storage section](skills/app-demo-video/SKILL.md#项目存放与文件结构).
 
 English narration defaults to local Kokoro `am_puck` at speed 0.98. Chinese narration uses Qwen3-TTS with the previously selected local `tanya` reference in `~/.video-tutorial/voices/`. That alias is not a built-in voice and its recording and transcript are not included. On a machine without it, the skill asks for an approved reference or an explicit replacement instead of choosing another voice. Model identifiers, mix levels and timing defaults are in the [audio reference](skills/app-demo-video/references/audio.md).
 
