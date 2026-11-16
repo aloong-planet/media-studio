@@ -1,14 +1,15 @@
 // Run from this folder: node --test article-figures.test.mjs.
 // new-project.sh, the template's deliver and fonts scripts and node are real; pnpm is a stub, so nothing is installed,
-// and in the fonts test fetch is a stub, so nothing is sent.
+// in the fonts test fetch is a stub, so nothing is sent, and in one deliver test the file system's copy fails on purpose.
 //
 // Not tested, here or in template/scripts, and how each is checked instead:
 // - What runs in a rendered page needs a browser render, which no test starts: the diagram-design measurements and the
 //   not-English check in src/check/Measure.tsx (QR-001/AC-01, CON-001, REQ-003/AC-04, AC-06), the dimming, the dot and
 //   the outlines drawn past the view's edge by src/map (REQ-003/AC-03), and scripts/render.mjs, which writes
-//   out/manifest.json with the figures it drew only when nothing failed (QR-001/AC-02) and prints a line per file
-//   (US-002/AC-01). They are checked by rendering the sample and samples broken on purpose, and by reading the pixels of
-//   an outline on the view's edge. A test can be added once the suite can run a render.
+//   out/manifest.json with the figures it drew only when nothing failed (QR-001/AC-02) and prints, as
+//   template/scripts/output.test.mjs tests them, each file's lines and its problems (US-002/AC-01). They are checked by
+//   rendering the sample and samples broken on purpose, and by reading the pixels of an outline on the view's edge. A
+//   test can be added once the suite can run a render.
 // - Root.tsx handing a figure's fps, stepSeconds and holdSeconds to gifTiming (US-003/AC-01): checked by rendering a GIF
 //   that sets them and reading its pass length.
 // - fonts.mjs --check, which pnpm check runs in a project: checked by pnpm check in a project made from the template.
@@ -25,7 +26,7 @@
 // - The template as a whole: video-tutorial's palette and fonts (CON-002; theme.test.mjs checks only that colour values
 //   stay in theme.ts and that there is no dark look), rendering with Remotion (CON-003), video-tutorial left unchanged
 //   (CON-004: git diff of skills/video-tutorial against the default branch is empty), and no publisher named (CON-005:
-//   a search of the skill for one finds nothing).
+//   a search of SKILL.md and template/, the lock file aside, for one finds nothing).
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import crypto from 'node:crypto';
@@ -141,12 +142,16 @@ test('a project whose packages failed to install gets them when new-project.sh r
   const m = setUp();
   m.failInstalls(true);
   assert.equal(m.newProject().status, 1);
+  // The author's work so far: the agreed list and a figure drawn in src/data.
   writeFileSync(join(m.project, 'figures.md'), 'the agreed list');
+  writeFileSync(join(m.project, 'src/data/figures.ts'), 'export const FIGURES = []; // drawn by the author\n');
+  const outsidePackages = (all) => Object.fromEntries(Object.entries(all).filter(([f]) => !f.startsWith('node_modules/')));
+  const before = outsidePackages(snapshot(m.project));
   m.failInstalls(false);
   const result = m.newProject();
   assert.equal(result.status, 0, result.stderr);
   assert.ok(existsSync(join(m.project, 'node_modules/.modules.yaml')), result.stdout);
-  assert.equal(readFileSync(join(m.project, 'figures.md'), 'utf8'), 'the agreed list');
+  assert.deepEqual(outsidePackages(snapshot(m.project)), before);
   m.cleanup();
 });
 
@@ -208,7 +213,7 @@ test('pnpm fonts sends Google Fonts the English characters one by one in code or
   assert.equal(m.newProject().status, 0);
   // The Chinese text must not be sent; the arrow, which English uses and no other source holds, must be.
   const text = '缓存未命中时请求转发';
-  writeFileSync(join(m.project, 'src/data/note.ts'), `export const NOTE = '${text}', MARK = '↯';\n`);
+  writeFileSync(join(m.project, 'src/data/note.ts'), `export const NOTE = '${text}', MARK = '⇄';\n`);
   // fetch is replaced: each request's text parameter is written down, and a tiny font comes back.
   const sentFile = join(m.root, 'sent.txt');
   const stub = join(m.root, 'fetch-stub.mjs');
@@ -229,7 +234,7 @@ globalThis.fetch = async (url) => {
   assert.equal(sent.length, 6); // three weights of two faces
   for (const chars of sent) {
     assert.deepEqual([...text].filter((c) => chars.includes(c)), []);
-    assert.ok(chars.includes('↯'), chars);
+    assert.ok(chars.includes('⇄'), chars);
     assert.ok([...chars].every((c, i, all) => i === 0 || all[i - 1].codePointAt(0) < c.codePointAt(0)), chars);
   }
   m.cleanup();
@@ -266,7 +271,7 @@ function rendered() {
   writeFileSync(join(m.images, 'a.png'), 'same a');
   return {
     ...m,
-    deliver: () => spawnSync(process.execPath, ['scripts/deliver.mjs'], {cwd: m.project, encoding: 'utf8'}),
+    deliver: (...node) => spawnSync(process.execPath, [...node, 'scripts/deliver.mjs'], {cwd: m.project, encoding: 'utf8'}),
   };
 }
 
@@ -333,6 +338,45 @@ test('a link under a figure\'s name is kept like an older file', () => {
   assert.equal(readlinkSync(join(m.images, 'b-v1.gif')), shared);
   assert.equal(readFileSync(join(m.images, 'b.gif'), 'utf8'), 'gif b');
   assert.equal(readFileSync(shared, 'utf8'), 'a picture other articles show');
+  m.cleanup();
+});
+
+test('a copy that fails stops pnpm deliver, which still reports what it copied and the older files it renamed', () => {
+  const m = rendered();
+  // The disk fills up while b.gif is copied, after cover.png was copied: the file system's copy is replaced to make it so.
+  const stub = join(m.root, 'no-space-for-b.mjs');
+  writeFileSync(
+    stub,
+    `import fs from 'node:fs';
+const copy = fs.copyFileSync;
+fs.copyFileSync = (from, to, mode) => {
+  if (String(to).endsWith('/b.gif')) throw Object.assign(new Error('ENOSPC: no space left on device'), {code: 'ENOSPC'});
+  return copy(from, to, mode);
+};
+`,
+  );
+  const result = m.deliver('--import', stub);
+  assert.equal(result.status, 1, result.stdout);
+  assert.equal(
+    result.stdout,
+    [
+      `Copied into ${m.images}:`,
+      'cover.png (copied)',
+      '  Section: Cover',
+      '  Alt text: 封面：调度会话给工人会话派活',
+      'a.png (already there, the same file)',
+      '  Section: §2 派活不用人，其余动作都得人来',
+      '  Alt text: 每一步由谁来做',
+      'b.gif (not copied)',
+      '  Section: §5 最难的一环是压缩自己，然后接着干',
+      '  Alt text: 会话压缩自己再被唤醒的过程',
+      'Renamed to keep the older file:',
+      '  cover.png -> cover-v1.png',
+      '',
+    ].join('\n'),
+  );
+  assert.match(result.stderr, /Copying b\.gif failed.*ENOSPC/);
+  assert.deepEqual(readdirSync(m.images).sort(), ['a.png', 'cover-v1.png', 'cover.png']);
   m.cleanup();
 });
 

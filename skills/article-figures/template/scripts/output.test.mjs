@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {test} from 'node:test';
-import {gifInfo, outputProblems, pngInfo} from './lib/output.mjs';
+import {fileReport, gifInfo, outputProblems, pngInfo, problemLines} from './lib/output.mjs';
 
 const fixture = (name) => fs.readFileSync(new URL(`fixtures/${name}`, import.meta.url));
 
@@ -41,5 +41,55 @@ for (const [what, figure, info, problem] of [
 ]) {
   test(`a file the article cannot use is a problem: ${what}`, () => {
     assert.deepEqual(outputProblems(figure, info), [problem]);
+  });
+}
+
+// Each case: a rendered file and the lines pnpm render prints for it. Each first line is as a render of the sample
+// printed it.
+for (const [what, figure, info, bytes, lines] of [
+  ['a still gives its size', {file: 'request-path.png', kind: 'still', id: 'request-path', states: 1}, {width: 2160, height: 1500}, 201728, ['out/request-path.png: 2160×1500, 197 KB, measured']],
+  [
+    'a GIF gives its pass and the still of each state it was measured on',
+    {file: 'cache-miss.gif', kind: 'gif', id: 'cache-miss', states: 5},
+    {width: 1080, height: 717, frames: 126, loops: 0, seconds: 8.4},
+    519168,
+    [
+      'out/cache-miss.gif: 1080×717, 126 frames, 8.4 s a pass, 507 KB, 4 steps and the hold measured',
+      '  out/frames/cache-miss-step-1.png',
+      '  out/frames/cache-miss-step-2.png',
+      '  out/frames/cache-miss-step-3.png',
+      '  out/frames/cache-miss-step-4.png',
+      '  out/frames/cache-miss-hold.png',
+    ],
+  ],
+]) {
+  test(`what pnpm render prints for a file: ${what}`, () => {
+    assert.deepEqual(fileReport(figure, info, bytes), lines);
+  });
+}
+
+// Each case: the problems in the order pnpm render found them, and the lines it prints for them.
+for (const [what, found, lines] of [
+  [
+    'the same problem in every state of a GIF is listed once, where it was first seen',
+    [
+      {file: 'b.gif', where: 'out/b.gif step-1', text: 'not English: Cache 缓存'},
+      {file: 'b.gif', where: 'out/b.gif step-2', text: 'not English: Cache 缓存'},
+      {file: 'b.gif', where: 'out/b.gif hold', text: 'not English: Cache 缓存'},
+    ],
+    ['out/b.gif step-1: not English: Cache 缓存'],
+  ],
+  [
+    'the same problem in two figures is listed for each',
+    [
+      {file: 'cover.png', where: 'out/cover.png', text: 'not English: Cache 缓存'},
+      {file: 'a.png', where: 'out/a.png', text: 'not English: Cache 缓存'},
+      {file: 'b.gif', where: 'out/b.gif step-1', text: 'not English: Cache 缓存'},
+    ],
+    ['out/cover.png: not English: Cache 缓存', 'out/a.png: not English: Cache 缓存', 'out/b.gif step-1: not English: Cache 缓存'],
+  ],
+]) {
+  test(`the problems pnpm render lists: ${what}`, () => {
+    assert.deepEqual(problemLines(found), lines);
   });
 }

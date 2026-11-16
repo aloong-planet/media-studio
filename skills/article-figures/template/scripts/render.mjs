@@ -7,7 +7,7 @@ import path from 'node:path';
 import {bundle} from '@remotion/bundler';
 import {getCompositions, openBrowser, renderMedia, renderStill} from '@remotion/renderer';
 import {EXTENSION, figureListProblems, parseFigureList} from './lib/figure-list.mjs';
-import {gifInfo, outputProblems, pngInfo} from './lib/output.mjs';
+import {fileReport, gifInfo, gifStates, outputProblems, pngInfo, problemLines} from './lib/output.mjs';
 
 fs.rmSync('out', {recursive: true, force: true});
 fs.mkdirSync('out/frames', {recursive: true});
@@ -35,24 +35,22 @@ if (listProblems.length) {
   process.exit(1);
 }
 
-const found = new Map(); // A problem in the diagram shows in many frames: report it once, with where it was first seen.
-const problem = (text, where) => found.has(text) || found.set(text, where);
+const found = [];
 const lines = [];
 for (const f of figures) {
   const {composition} = f;
   const output = path.join('out', f.file);
+  const states = f.kind === 'gif' ? gifStates(f.id, f.measureAt.length) : null;
   // A GIF is measured on one still per step and on its hold, kept in out/frames for review; a still and the cover on the file itself.
   for (const [i, frame] of f.measureAt.entries()) {
-    const last = i === f.measureAt.length - 1;
-    const measure = f.kind !== 'gif' || last ? 'static' : 'step';
-    const state = last ? 'hold' : `step-${i + 1}`;
+    const measure = f.kind !== 'gif' || i === f.measureAt.length - 1 ? 'static' : 'step';
     let report = null;
     await renderStill({
       composition,
       serveUrl,
       frame,
       scale: f.scale,
-      output: f.kind === 'gif' ? path.join('out/frames', `${f.id}-${state}.png`) : output,
+      output: states ? states[i].still : output,
       inputProps: {measure},
       puppeteerInstance: browser,
       logLevel: 'error',
@@ -60,27 +58,26 @@ for (const f of figures) {
         if (text.startsWith('MEASURE ')) report = JSON.parse(text.slice(8));
       },
     });
-    const where = f.kind === 'gif' ? `${output} ${state}` : output;
-    if (!report) problem('not measured', where);
-    else if (report.luminance < 0.8) problem(`background too dark for the daytime look (${report.luminance.toFixed(2)})`, where);
-    for (const p of report?.problems ?? []) problem(p, where);
+    const where = states ? `${output} ${states[i].state}` : output;
+    const problem = (text) => found.push({file: f.file, where, text});
+    if (!report) problem('not measured');
+    else if (report.luminance < 0.8) problem(`background too dark for the daytime look (${report.luminance.toFixed(2)})`);
+    for (const p of report?.problems ?? []) problem(p);
   }
   if (f.kind === 'gif') {
     await renderMedia({composition, serveUrl, codec: 'gif', scale: f.scale, numberOfGifLoops: null, outputLocation: output, inputProps: {}, puppeteerInstance: browser, logLevel: 'error'});
   }
   const buf = fs.readFileSync(output);
   const info = f.kind === 'gif' ? gifInfo(buf) : pngInfo(buf);
-  for (const p of outputProblems({file: f.file, kind: f.kind, height: composition.height, fps: composition.fps}, info)) problem(p, output);
-  const kb = `${Math.round(buf.length / 1024)} KB`;
-  const states = f.kind === 'gif' ? `${f.measureAt.length - 1} steps and the hold measured` : 'measured';
-  lines.push(f.kind === 'gif' ? `${output}: ${info.width}×${info.height}, ${info.frames} frames, ${info.seconds} s a pass, ${kb}, ${states}` : `${output}: ${info.width}×${info.height}, ${kb}, ${states}`);
+  for (const p of outputProblems({file: f.file, kind: f.kind, height: composition.height, fps: composition.fps}, info)) found.push({file: f.file, where: output, text: p});
+  lines.push(...fileReport({file: f.file, kind: f.kind, id: f.id, states: f.measureAt.length}, info, buf.length));
 }
 await browser.close({silent: true});
 
-for (const l of lines) console.log(l);
-for (const [text, where] of found) console.log(`${where}: ${text}`);
-if (found.size) {
-  console.log(`FAILED: ${found.size} problems`);
+const problems = problemLines(found);
+for (const l of [...lines, ...problems]) console.log(l);
+if (problems.length) {
+  console.log(`FAILED: ${problems.length} problems`);
   process.exit(1);
 }
 const sha256 = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');

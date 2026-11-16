@@ -1,4 +1,4 @@
-// Reads what a rendered file really is, and holds it to the sizes the article needs.
+// Reads what a rendered file really is, holds it to the sizes the article needs, and words what pnpm render prints.
 
 export function pngInfo(buf) {
   if (buf.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a') throw new Error('not a PNG file');
@@ -31,6 +31,34 @@ export function gifInfo(buf) {
   }
   info.seconds = centiseconds / 100;
   return info;
+}
+
+// The states a GIF is measured on, one for each step and the last for its hold, each with the still kept for review.
+export const gifStates = (id, count) =>
+  Array.from({length: count}, (_, i) => {
+    const state = i === count - 1 ? 'hold' : `step-${i + 1}`;
+    return {state, still: `out/frames/${id}-${state}.png`};
+  });
+
+// What pnpm render prints for a rendered file: its size and what was measured, and under a GIF the still of each state.
+export function fileReport({file, kind, id, states}, info, bytes) {
+  const kb = `${Math.round(bytes / 1024)} KB`;
+  if (kind !== 'gif') return [`out/${file}: ${info.width}×${info.height}, ${kb}, measured`];
+  return [
+    `out/${file}: ${info.width}×${info.height}, ${info.frames} frames, ${info.seconds} s a pass, ${kb}, ${states - 1} steps and the hold measured`,
+    ...gifStates(id, states).map((s) => `  ${s.still}`),
+  ];
+}
+
+// problems: [{file, where, text}] in the order pnpm render found them. A problem in a diagram can show in several states
+// of a GIF: it is listed once for each file, with where in that file it was first seen.
+export function problemLines(problems) {
+  const seen = new Map();
+  for (const {file, where, text} of problems) {
+    const key = `${file}\n${text}`;
+    if (!seen.has(key)) seen.set(key, `${where}: ${text}`);
+  }
+  return [...seen.values()];
 }
 
 const MAX_PASS_SECONDS = 12;

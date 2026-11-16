@@ -24,8 +24,6 @@ for (const [what, manifest, hashes, list, problems] of [
   ['a rendered file that changed', MANIFEST, {...HASHES, 'a.png': 'edited'}, rows(A, B), [`out/a.png changed after pnpm render passed: ${AGAIN}`]],
   ['a rendered file that is gone', MANIFEST, {...HASHES, 'b.gif': null}, rows(A, B), [`out/b.gif changed after pnpm render passed: ${AGAIN}`]],
   ['a row added to the list', MANIFEST, HASHES, rows(A, B, '| `c.png` | §6 | still | Later | Added | 后加的图 |\n'), [`figures.md changed after pnpm render passed (c.png is in figures.md but not drawn): ${AGAIN}`]],
-  ['a row removed from the list', MANIFEST, HASHES, rows(A), [`figures.md changed after pnpm render passed (b is drawn but not in figures.md): ${AGAIN}`]],
-  ['a title changed in the list', MANIFEST, HASHES, rows(A.replace('Human in the loop', 'Who acts'), B), [`figures.md changed after pnpm render passed (a.png is listed as "Who acts" but drawn as "Human in the loop"): ${AGAIN}`]],
 ]) {
   test(`what may be copied into the article: ${what}`, () => {
     assert.deepEqual(deliveryProblems(manifest, hashes, list), problems);

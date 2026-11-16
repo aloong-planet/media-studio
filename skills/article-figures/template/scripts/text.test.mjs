@@ -11,6 +11,9 @@ for (const [text, found] of [
   ['（idle）', true],
   ['ｉｄｌｅ', true],
   ['Done。', true],
+  // Signs and spaces of the English blocks that IBM Plex lacks, so they would be drawn in another font.
+  ['on a miss ↯', true],
+  ['12 ms', true],
   ['Compact, then wake', false],
   ['idle | busy: 3 × 2 → 6', false],
   ['“Done” — it’s 12:00…', false],

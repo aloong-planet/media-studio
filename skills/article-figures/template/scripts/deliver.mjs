@@ -3,7 +3,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import {applyPlan, planCopy} from './lib/copy.mjs';
+import {applyPlan, copyReport, planCopy} from './lib/copy.mjs';
 import {deliveryProblems} from './lib/delivery.mjs';
 import {parseFigureList} from './lib/figure-list.mjs';
 
@@ -34,15 +34,23 @@ fs.writeFileSync(path.join(images, probe), '');
 const ignoreCase = fs.existsSync(path.join(images, probe.toUpperCase()));
 fs.unlinkSync(path.join(images, probe));
 const plan = planCopy(rows.map((r) => ({name: r.file, sha256: manifest.files[r.file]})), {entries, ignoreCase});
-applyPlan(plan, {
-  rename: (from, to) => fs.renameSync(path.join(images, from), path.join(images, to)),
-  copy: (name) => fs.copyFileSync(path.join('out', name), path.join(images, name), fs.constants.COPYFILE_EXCL),
-});
-
-const report = [`Copied into ${images}:`];
-plan.forEach((p, i) => {
-  report.push(`${p.name} (${p.action === 'copy' ? 'copied' : 'already there, the same file'})`, `  Section: ${rows[i].section}`, `  Alt text: ${rows[i].alt}`);
-});
-const renamed = plan.filter((p) => p.rename);
-if (renamed.length) report.push('Renamed to keep the older file:', ...renamed.map((p) => `  ${p.rename.from} -> ${p.rename.to}`));
-console.log(report.join('\n'));
+// A copy that fails stops the plan; what was copied and renamed before it is reported all the same.
+const copied = new Set();
+let failure = null;
+try {
+  applyPlan(plan, {
+    rename: (from, to) => fs.renameSync(path.join(images, from), path.join(images, to)),
+    copy: (name) => {
+      fs.copyFileSync(path.join('out', name), path.join(images, name), fs.constants.COPYFILE_EXCL);
+      copied.add(name);
+    },
+  });
+} catch (error) {
+  failure = error;
+}
+console.log(copyReport(plan, rows, images, copied).join('\n'));
+if (failure) {
+  const name = plan.find((p) => p.action === 'copy' && !copied.has(p.name)).name;
+  console.error(`Copying ${name} failed, and nothing after it was copied: ${failure.message}`);
+  process.exit(1);
+}

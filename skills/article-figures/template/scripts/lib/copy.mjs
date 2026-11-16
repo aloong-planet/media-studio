@@ -37,3 +37,15 @@ export function applyPlan(plan, ops) {
     }
   }
 }
+
+// What pnpm deliver reports once the plan was carried out or stopped: each figure with its section and alt text from
+// its row, and every older file that was renamed and stays renamed. copied holds the names whose copy succeeded; a
+// figure to copy that is not among them was not copied, and the older file it would have renamed has its name.
+export function copyReport(plan, rows, images, copied) {
+  const state = (p) => (p.action === 'keep' ? 'already there, the same file' : copied.has(p.name) ? 'copied' : 'not copied');
+  const report = [`Copied into ${images}:`];
+  plan.forEach((p, i) => report.push(`${p.name} (${state(p)})`, `  Section: ${rows[i].section}`, `  Alt text: ${rows[i].alt}`));
+  const renamed = plan.filter((p) => p.rename && copied.has(p.name));
+  if (renamed.length) report.push('Renamed to keep the older file:', ...renamed.map((p) => `  ${p.rename.from} -> ${p.rename.to}`));
+  return report;
+}

@@ -38,6 +38,8 @@ for (const [what, list, drawn, problems] of [
   ['a listed figure that is not drawn', LIST, DRAWN.slice(0, 2), ['compact-wake.gif is in figures.md but not drawn']],
   ['a drawn figure that is not listed', LIST, [...DRAWN, {id: 'extra', kind: 'still', title: 'Extra'}], ['extra is drawn but not in figures.md']],
   ['a GIF name for a still', LIST, DRAWN.map((f) => (f.id === 'compact-wake' ? {...f, kind: 'still'} : f)), ['compact-wake.gif is listed as gif but drawn as still, which renders compact-wake.png']],
+  // A still and a cover are both .png files, so only the kind tells them apart.
+  ['a still drawn as a cover', LIST, DRAWN.map((f) => (f.id === 'worker-states' ? {...f, kind: 'cover'} : f)), ['worker-states.png is listed as still but drawn as cover, which renders worker-states.png']],
   ['another title', LIST, DRAWN.map((f) => (f.id === 'worker-states' ? {...f, title: 'States'} : f)), ['worker-states.png is listed as "Worker states" but drawn as "States"']],
   ['a file listed twice', `${LIST}| \`compact-wake.gif\` | §6 收尾 | gif | Compact, then wake | The same steps again | 再看一遍压缩过程 |\n`, DRAWN, ['compact-wake.gif is listed twice']],
   ['a file without the table', '# Figure list\n\nTo be agreed.\n', DRAWN, ['figures.md has no table with the columns File, Section, Kind, Title, Shows and Alt text']],

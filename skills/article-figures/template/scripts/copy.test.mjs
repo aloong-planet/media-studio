@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {applyPlan, planCopy} from './lib/copy.mjs';
+import {applyPlan, copyReport, planCopy} from './lib/copy.mjs';
 
 // A folder like macOS's default one, which takes Cover.png and cover.png for one name, or one made case-sensitive.
 const folder = (entries, ignoreCase = true) => ({entries: new Map(Object.entries(entries)), ignoreCase});
@@ -71,5 +71,71 @@ for (const [what, failing, after] of [
     const f = memoryFolder({'a.png': 'old a', 'b.png': 'same b'}, [failing]);
     assert.throws(() => applyPlan(PLAN, f.ops), new RegExp(`ENOSPC ${failing}`));
     assert.deepEqual(Object.fromEntries(f.files), after);
+  });
+}
+
+const ROWS = [
+  {section: '§1 起因', alt: '旧的 a'},
+  {section: '§2 经过', alt: '不变的 b'},
+  {section: '§3 结果', alt: '新的 c'},
+];
+
+// Each case: the names whose copy succeeded, and the report.
+for (const [what, copied, report] of [
+  [
+    'every copy succeeded',
+    ['a.png', 'c.png'],
+    [
+      'Copied into /article/assets/images:',
+      'a.png (copied)',
+      '  Section: §1 起因',
+      '  Alt text: 旧的 a',
+      'b.png (already there, the same file)',
+      '  Section: §2 经过',
+      '  Alt text: 不变的 b',
+      'c.png (copied)',
+      '  Section: §3 结果',
+      '  Alt text: 新的 c',
+      'Renamed to keep the older file:',
+      '  a.png -> a-v1.png',
+    ],
+  ],
+  [
+    'a copy that failed after an earlier one renamed an older file still lists that rename',
+    ['a.png'],
+    [
+      'Copied into /article/assets/images:',
+      'a.png (copied)',
+      '  Section: §1 起因',
+      '  Alt text: 旧的 a',
+      'b.png (already there, the same file)',
+      '  Section: §2 经过',
+      '  Alt text: 不变的 b',
+      'c.png (not copied)',
+      '  Section: §3 结果',
+      '  Alt text: 新的 c',
+      'Renamed to keep the older file:',
+      '  a.png -> a-v1.png',
+    ],
+  ],
+  [
+    'a copy that failed after its own rename lists no rename, since the older file has its name back',
+    [],
+    [
+      'Copied into /article/assets/images:',
+      'a.png (not copied)',
+      '  Section: §1 起因',
+      '  Alt text: 旧的 a',
+      'b.png (already there, the same file)',
+      '  Section: §2 经过',
+      '  Alt text: 不变的 b',
+      'c.png (not copied)',
+      '  Section: §3 结果',
+      '  Alt text: 新的 c',
+    ],
+  ],
+]) {
+  test(`what deliver reports: ${what}`, () => {
+    assert.deepEqual(copyReport(PLAN, ROWS, '/article/assets/images', new Set(copied)), report);
   });
 }
