@@ -81,7 +81,7 @@ when_to_use: 用户提到公众号或博客的配图、动图、封面，要图�
 
 1. 每个配图在 `src/data/figures.ts` 的 `FIGURES` 里写一项：`id` 与清单的文件名去掉扩展名相同，`kind` 与清单的种类相同，`title` 与清单的英文标题相同。判据：`pnpm render` 核对这三项，不一致即报错停下。
 2. 封面必须写 `subtitle`，是一句英文；封面的图必须是只由框和连线组成、画文章主题的简图，不得画成插画。判据：第 4 步亲自看。
-3. 图里的一切文字必须是英文。判据：`pnpm render` 报 `not English` 即违反。
+3. 图里的一切文字必须是英文，且只得用 IBM Plex Sans 与 IBM Plex Mono 都有的字符。判据：`pnpm render` 报 `not English` 即违反，括号里是每个不合格字符的编码，如 `U+2009`。
 4. 字段必须符合 `src/map/geometry.ts` 的 `Figure` 和 `Diagram` 类型。判据：`pnpm check`。
 5. 图的坐标单位是配图的设计像素：配图宽 720，静态图按 3 倍出成 2160 像素宽，动图按 1.5 倍出成 1080 像素宽。`view` 的宽不得超过 672，必须框住全部的框、连线和文字。判据：`pnpm render` 报 `room for 672` 或 `outside the diagram's view` 即违反。
 6. 框里点明这个框自身身份的词（模块名、类型名）必须写成 `title` 或带 `key: true` 的行。

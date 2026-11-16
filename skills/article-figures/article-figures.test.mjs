@@ -22,7 +22,9 @@
 // - What SKILL.md tells the agent to do: send the list and wait for agreement before making anything or changing it
 //   (US-001/AC-01 to AC-03), wait for the approval of a new preview (US-002/AC-02), write the alt text in the article's
 //   language (US-002/AC-03), lower the frame rate or shorten the pass (US-003/AC-01), draw the cover as a design
-//   (REQ-004/AC-02), and send no preview while a check fails (QR-001/AC-02). They are checked by following the skill.
+//   (REQ-004/AC-02), send no preview while a check fails (QR-001/AC-02), send the path of each measured GIF state's
+//   still (US-002/AC-01), and send all of pnpm deliver's output and stop when it fails for any reason but a new render
+//   (REQ-005/AC-02). They are checked by following the skill.
 // - The template as a whole: video-tutorial's palette and fonts (CON-002; theme.test.mjs checks only that colour values
 //   stay in theme.ts and that there is no dark look), rendering with Remotion (CON-003), video-tutorial left unchanged
 //   (CON-004: git diff of skills/video-tutorial against the default branch is empty), and no publisher named (CON-005:

@@ -3,7 +3,7 @@
 import React, {useEffect} from 'react';
 import {continueRender, delayRender, getInputProps, useCurrentFrame, useVideoConfig} from 'remotion';
 import {pathSegments} from '../map/path';
-import {nonEnglish} from './text';
+import {englishProblem} from './text';
 
 const MIN_CONTRAST = 4.5;
 const MIN_BADGE_GAP = 2; // map units of clear space around a step number
@@ -78,7 +78,10 @@ const DIMMED_IN_STILL = 'dimmed text in a static frame';
 // Every figure is in English; the whole text is reported so the author can find it.
 const checkEnglish = (root: HTMLElement, problems: string[]) => {
   for (const e of root.querySelectorAll('*')) {
-    for (const n of e.childNodes) if (n.nodeType === 3 && n.textContent && nonEnglish(n.textContent)) problems.push(`not English: ${n.textContent.trim()}`);
+    for (const n of e.childNodes) {
+      const problem = n.nodeType === 3 && n.textContent ? englishProblem(n.textContent) : null;
+      if (problem) problems.push(problem);
+    }
   }
 };
 

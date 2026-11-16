@@ -41,12 +41,12 @@ export const gifStates = (id, count) =>
   });
 
 // What pnpm render prints for a rendered file: its size and what was measured, and under a GIF the still of each state.
-export function fileReport({file, kind, id, states}, info, bytes) {
+export function fileReport({file, kind, id, stateCount}, info, bytes) {
   const kb = `${Math.round(bytes / 1024)} KB`;
   if (kind !== 'gif') return [`out/${file}: ${info.width}×${info.height}, ${kb}, measured`];
   return [
-    `out/${file}: ${info.width}×${info.height}, ${info.frames} frames, ${info.seconds} s a pass, ${kb}, ${states - 1} steps and the hold measured`,
-    ...gifStates(id, states).map((s) => `  ${s.still}`),
+    `out/${file}: ${info.width}×${info.height}, ${info.frames} frames, ${info.seconds} s a pass, ${kb}, ${stateCount - 1} steps and the hold measured`,
+    ...gifStates(id, stateCount).map((s) => `  ${s.still}`),
   ];
 }
 

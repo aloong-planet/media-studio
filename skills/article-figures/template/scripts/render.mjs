@@ -70,7 +70,7 @@ for (const f of figures) {
   const buf = fs.readFileSync(output);
   const info = f.kind === 'gif' ? gifInfo(buf) : pngInfo(buf);
   for (const p of outputProblems({file: f.file, kind: f.kind, height: composition.height, fps: composition.fps}, info)) found.push({file: f.file, where: output, text: p});
-  lines.push(...fileReport({file: f.file, kind: f.kind, id: f.id, states: f.measureAt.length}, info, buf.length));
+  lines.push(...fileReport({file: f.file, kind: f.kind, id: f.id, stateCount: f.measureAt.length}, info, buf.length));
 }
 await browser.close({silent: true});
 

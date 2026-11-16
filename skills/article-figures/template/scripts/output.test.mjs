@@ -47,10 +47,10 @@ for (const [what, figure, info, problem] of [
 // Each case: a rendered file and the lines pnpm render prints for it. Each first line is as a render of the sample
 // printed it.
 for (const [what, figure, info, bytes, lines] of [
-  ['a still gives its size', {file: 'request-path.png', kind: 'still', id: 'request-path', states: 1}, {width: 2160, height: 1500}, 201728, ['out/request-path.png: 2160×1500, 197 KB, measured']],
+  ['a still gives its size', {file: 'request-path.png', kind: 'still', id: 'request-path', stateCount: 1}, {width: 2160, height: 1500}, 201728, ['out/request-path.png: 2160×1500, 197 KB, measured']],
   [
     'a GIF gives its pass and the still of each state it was measured on',
-    {file: 'cache-miss.gif', kind: 'gif', id: 'cache-miss', states: 5},
+    {file: 'cache-miss.gif', kind: 'gif', id: 'cache-miss', stateCount: 5},
     {width: 1080, height: 717, frames: 126, loops: 0, seconds: 8.4},
     519168,
     [

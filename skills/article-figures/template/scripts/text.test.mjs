@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {nonEnglish} from '../src/check/text.ts';
+import {englishProblem, nonEnglish} from '../src/check/text.ts';
 
 // Each case: a text and whether it has a character English does not use. English text keeps digits and typographic punctuation.
 for (const [text, found] of [
@@ -22,5 +22,17 @@ for (const [text, found] of [
 ]) {
   test(`a character English does not use is ${found ? 'found' : 'not found'}: ${text}`, () => {
     assert.equal(nonEnglish(text), found);
+  });
+}
+
+// Each case: a text and the problem pnpm render reports for it, which names each refused character once by its code
+// point, so that one that looks like an accepted sign can be found.
+for (const [text, problem] of [
+  ['12 ms', 'not English: 12 ms (U+2009)'],
+  ['Cache 缓存缓', 'not English: Cache 缓存缓 (U+7F13 U+5B58)'],
+  ['Compact, then wake', null],
+]) {
+  test(`the problem reported for a text: ${text}`, () => {
+    assert.equal(englishProblem(text), problem);
   });
 }

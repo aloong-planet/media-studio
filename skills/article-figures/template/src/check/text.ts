@@ -36,9 +36,22 @@ const ENGLISH: Array<[number, number]> = [
   [0x2264, 0x2265],
 ];
 
-// Tabs and line breaks are left out of the check; every other character, spaces included, is checked.
-export const nonEnglish = (text: string): boolean =>
-  [...text.replace(/[\t\n\r]/g, '')].some((c) => {
-    const code = c.codePointAt(0)!;
-    return !ENGLISH.some(([lo, hi]) => code >= lo && code <= hi);
-  });
+// The characters of a text that the check refuses, each once, in the order they appear. Tabs and line breaks are left
+// out of the check; every other character, spaces included, is checked.
+const refused = (text: string): string[] => [
+  ...new Set(
+    [...text.replace(/[\t\n\r]/g, '')].filter((c) => {
+      const code = c.codePointAt(0)!;
+      return !ENGLISH.some(([lo, hi]) => code >= lo && code <= hi);
+    }),
+  ),
+];
+
+export const nonEnglish = (text: string): boolean => refused(text).length > 0;
+
+// The problem pnpm render reports for a text in a figure, or null when the check accepts it. It names each refused
+// character by its code point, so that one that looks like an accepted sign, such as a thin space, can be found.
+export const englishProblem = (text: string): string | null => {
+  const codes = refused(text).map((c) => `U+${c.codePointAt(0)!.toString(16).toUpperCase().padStart(4, '0')}`);
+  return codes.length ? `not English: ${text.trim()} (${codes.join(' ')})` : null;
+};
