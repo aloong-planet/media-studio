@@ -23,8 +23,10 @@ test('a figure the article can use has no problems', () => {
       outputProblems({file: 'a.png', kind: 'still', height: 474, fps: 15}, {width: 2160, height: 1422}),
       outputProblems({file: 'c.png', kind: 'cover', height: 820, fps: 15}, {width: 1920, height: 820}),
       outputProblems({file: 'b.gif', kind: 'gif', height: 474, fps: 15}, {width: 1080, height: 711, frames: 126, loops: 0, seconds: 8.4}),
+      // 180 frames at 15 a second: a pass of exactly 12 s, the longest allowed.
+      outputProblems({file: 'd.gif', kind: 'gif', height: 474, fps: 15}, {width: 1080, height: 711, frames: 180, loops: 0, seconds: 12}),
     ],
-    [[], [], []],
+    [[], [], [], []],
   );
 });
 

@@ -1,8 +1,9 @@
 // Downloads only the glyphs these figures use, so rendering needs no network and no system fonts.
-// Only the de-duplicated set of characters leaves the machine, never the figures' text.
+// Only the English characters, each once and in code order, leave the machine, never the figures' text.
 // With --check, downloads nothing and fails if the text now uses a character the fonts were not cut for.
 import fs from 'node:fs';
 import path from 'node:path';
+import {fontCharacters} from './lib/charset.mjs';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const FACES = [
@@ -16,9 +17,7 @@ const walk = (dir) => fs.readdirSync(dir, {withFileTypes: true}).flatMap((e) => 
   return e.isDirectory() ? walk(p) : [p];
 });
 const sources = walk('src').filter((f) => /\.(ts|tsx|json)$/.test(f));
-const decoded = sources.map((f) => fs.readFileSync(f, 'utf8')).join('');
-const chars = new Set([...decoded].filter((c) => c.codePointAt(0) >= 0x20 && c !== ' '));
-for (let c = 0x20; c < 0x7f; c++) chars.add(String.fromCharCode(c));
+const chars = new Set(fontCharacters(sources.map((f) => fs.readFileSync(f, 'utf8')).join('')));
 
 if (process.argv.includes('--check')) {
   const cut = new Set(fs.existsSync(CHARSET) ? [...fs.readFileSync(CHARSET, 'utf8')] : []);

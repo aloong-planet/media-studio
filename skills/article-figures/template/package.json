@@ -5,7 +5,7 @@
   "scripts": {
     "fonts": "node scripts/fonts.mjs",
     "studio": "remotion studio src/index.ts",
-    "check": "tsc --noEmit && node scripts/fonts.mjs --check && node --test scripts/",
+    "check": "tsc --noEmit && node scripts/fonts.mjs --check && node --test 'scripts/*.test.mjs'",
     "render": "node scripts/render.mjs",
     "deliver": "node scripts/deliver.mjs"
   },

@@ -12,14 +12,24 @@ export type Step = {
 
 export type GifTiming = {fps: number; stepFrames: number; holdFrames: number; fadeFrames: number; total: number};
 
+export const DOT_DELAY = 2; // frames from the start of a step to the start of its dot
+export const DOT_FADE = 0.3; // after reaching the end, a dot fades out over this share of its travel time
+// The most frames a dot may travel and still reach the end and fade out before the step's last frame, where it is measured.
+const dotRoom = (stepFrames: number) => Math.floor((stepFrames - 1 - DOT_DELAY) / (1 + DOT_FADE));
+
 export function gifTiming(steps: number, fps: number = GIF_FPS, stepSeconds = 1.6, holdSeconds = 2): GifTiming {
   const stepFrames = Math.round(stepSeconds * fps);
   const holdFrames = Math.round(holdSeconds * fps);
+  const fadeFrames = Math.round(fps / 3);
   const total = steps * stepFrames + holdFrames;
   const seconds = total / fps;
   if (seconds > MAX_PASS_SECONDS) throw new Error(`${steps} steps make a ${seconds.toFixed(1)} s pass, over ${MAX_PASS_SECONDS} s`);
-  return {fps, stepFrames, holdFrames, fadeFrames: Math.round(fps / 3), total};
+  if (dotRoom(stepFrames) < 2 || stepFrames - 1 < fadeFrames) throw new Error(`a step of ${stepSeconds} s is too short for its light to settle and its dot to travel`);
+  return {fps, stepFrames, holdFrames, fadeFrames, total};
 }
+
+// A dot travels its route in 0.45 to 1 s by the route's length, 300 units taking 1 s, and faster when the step is too short for that.
+export const dotFrames = (length: number, t: GifTiming): number => Math.min(Math.round(Math.min(1, Math.max(0.45, length / 300)) * t.fps), dotRoom(t.stepFrames));
 
 export type GifState = {
   step: number | null; // the current step, or null in the hold

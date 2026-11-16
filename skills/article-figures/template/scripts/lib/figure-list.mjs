@@ -34,12 +34,15 @@ export function figureListProblems(rows, figures) {
   if (!rows) return ['figures.md has no table with the columns File, Section, Kind, Title, Shows and Alt text'];
   const problems = [];
   const stem = (file) => file.replace(/\.[^.]*$/, '');
+  const seen = new Set();
   for (const row of rows) {
     const figure = figures.find((f) => f.id === stem(row.file));
-    if (!figure) problems.push(`${row.file} is in figures.md but not drawn`);
+    if (seen.has(row.file)) problems.push(`${row.file} is listed twice`);
+    else if (!figure) problems.push(`${row.file} is in figures.md but not drawn`);
     else if (row.kind !== figure.kind || row.file !== figure.id + EXTENSION[figure.kind])
       problems.push(`${row.file} is listed as ${row.kind} but drawn as ${figure.kind}, which renders ${figure.id + EXTENSION[figure.kind]}`);
     else if (row.title !== figure.title) problems.push(`${row.file} is listed as "${row.title}" but drawn as "${figure.title}"`);
+    seen.add(row.file);
   }
   for (const f of figures) if (!rows.some((row) => stem(row.file) === f.id)) problems.push(`${f.id} is drawn but not in figures.md`);
   return problems;

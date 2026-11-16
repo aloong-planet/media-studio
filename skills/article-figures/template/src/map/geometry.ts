@@ -1,6 +1,7 @@
-import {ACCENTS, Hue, Tone} from '../theme';
+// Imported with the extension and only types besides, so that node can load this file for the tests.
+import type {ACCENTS, Hue, Tone} from '../theme';
 import type {Step} from '../timeline';
-import {pathSegments} from './path';
+import {pathSegments} from './path.ts';
 
 export type Box = [number, number, number, number];
 

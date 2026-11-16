@@ -2,11 +2,10 @@ import React from 'react';
 import {getLength, getPointAtLength} from '@remotion/paths';
 import {Easing, interpolate} from 'remotion';
 import {C, MONO, TONES, Tone} from '../theme';
-import {GifState, GifTiming, Step} from '../timeline';
+import {DOT_DELAY, DOT_FADE, GifState, GifTiming, Step, dotFrames} from '../timeline';
 import {Diagram, routesOf} from './geometry';
 
 const clamp01 = {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'} as const;
-const DOT_DELAY = 2; // frames after the step begins
 
 const lengths = new Map<string, number>();
 const lengthOf = (d: string) => {
@@ -15,17 +14,16 @@ const lengthOf = (d: string) => {
 };
 
 // A dot with a short trail travels the route once, then fades out before the step ends.
-const Dot: React.FC<{d: string; tone: Tone; local: number; fps: number}> = ({d, tone, local, fps}) => {
+const Dot: React.FC<{d: string; tone: Tone; local: number; timing: GifTiming}> = ({d, tone, local, timing}) => {
   const len = lengthOf(d);
-  const dur = Math.round(Math.min(1, Math.max(0.45, len / 300)) * fps);
-  const t = (local - DOT_DELAY) / dur;
-  if (t < 0 || t > 1.3) return null;
+  const t = (local - DOT_DELAY) / dotFrames(len, timing);
+  if (t < 0 || t > 1 + DOT_FADE) return null;
   const ease = Easing.inOut(Easing.quad);
   const at = (v: number) => getPointAtLength(d, len * ease(Math.min(1, Math.max(0, v))))!;
   const color = TONES[tone];
   const head = at(t);
   return (
-    <g opacity={t > 1 ? 1 - (t - 1) / 0.3 : 1}>
+    <g opacity={t > 1 ? 1 - (t - 1) / DOT_FADE : 1}>
       {[4, 3, 2, 1].map((k) => {
         const p = at(t - k * 0.05);
         return <circle key={k} cx={p.x} cy={p.y} r={6.5 - k} fill={color} opacity={0.34 - k * 0.06} />;
@@ -57,7 +55,7 @@ export const StepMarks: React.FC<{diagram: Diagram; steps: Step[]; state: GifSta
   return (
     <>
       {(current?.flows ?? current?.e ?? []).map((id) => (
-        <Dot key={id} d={routes[id].d} tone={toneOf(routes[id].edge)} local={state.local} fps={timing.fps} />
+        <Dot key={id} d={routes[id].d} tone={toneOf(routes[id].edge)} local={state.local} timing={timing} />
       ))}
       {state.badges.map((b) => (
         <Badge

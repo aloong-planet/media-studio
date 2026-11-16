@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {gifStateAt, gifTiming, measureFrames} from '../src/timeline.ts';
+import {dotFrames, gifStateAt, gifTiming, measureFrames} from '../src/timeline.ts';
 
 const STEPS = [
   {n: ['a', 'b'], e: ['ab'], at: [0, 0]},
@@ -10,19 +10,46 @@ const STEPS = [
 // At 15 frames a second: 1.6 s is 24 frames a step, 2 s is a 30-frame hold, so three steps make 102 frames.
 const TIMING = gifTiming(3, 15);
 
-// A lower frame rate keeps the seconds: 1.6 s is 16 frames at 10 a second.
-for (const [fps, expected] of [
-  [15, {fps: 15, stepFrames: 24, holdFrames: 30, fadeFrames: 5, total: 102}],
-  [10, {fps: 10, stepFrames: 16, holdFrames: 20, fadeFrames: 3, total: 68}],
+// Each case: the steps, frame rate, seconds a step and seconds of hold, and the timing.
+for (const [what, args, expected] of [
+  ['at 15 frames a second', [3, 15], {fps: 15, stepFrames: 24, holdFrames: 30, fadeFrames: 5, total: 102}],
+  // A lower frame rate keeps the seconds: 1.6 s is 16 frames at 10 a second.
+  ['at 10 frames a second', [3, 10], {fps: 10, stepFrames: 16, holdFrames: 20, fadeFrames: 3, total: 68}],
+  // A shorter pass: 1.2 s is 18 frames and 1.4 s is 21 at 15 a second.
+  ['with shorter steps and hold', [3, 15, 1.2, 1.4], {fps: 15, stepFrames: 18, holdFrames: 21, fadeFrames: 5, total: 75}],
+  // Five steps of 2 s and a 2 s hold are 180 frames, 12.0 s: at the limit, not over it.
+  ['of exactly 12 seconds', [5, 15, 2, 2], {fps: 15, stepFrames: 30, holdFrames: 30, fadeFrames: 5, total: 180}],
 ]) {
-  test(`a pass is its steps and then the hold, at ${fps} frames a second`, () => {
-    assert.deepEqual(gifTiming(3, fps), expected);
+  test(`a pass is its steps and then the hold: ${what}`, () => {
+    assert.deepEqual(gifTiming(...args), expected);
   });
 }
 
-test('a pass over 12 seconds is refused', () => {
-  assert.throws(() => gifTiming(7, 15), /7 steps make a 13\.2 s pass, over 12 s/);
-});
+for (const [what, args, error] of [
+  ['a pass over 12 seconds', [7, 15], /7 steps make a 13\.2 s pass, over 12 s/],
+  // 0.3 s is 5 frames: without the 2 before the dot sets off and the last one, 2 are left, which fit 1.3 times
+  // a travel of 1 frame only, and a dot needs at least 2.
+  ['a step too short for its dot', [3, 15, 0.3], /a step of 0\.3 s is too short/],
+  // At 30 frames a second 0.3 s is 9 frames, room enough for the dot, but the light takes 10 frames to come on.
+  ['a step too short for its light to settle', [3, 30, 0.3], /a step of 0\.3 s is too short/],
+]) {
+  test(`a timing the article cannot use is refused: ${what}`, () => {
+    assert.throws(() => gifTiming(...args), error);
+  });
+}
+
+// Each case: the route's length, the timing, and the frames the dot travels. At 15 frames a second a 448-unit route
+// would take 1 s, 15 frames, and a 45-unit one the shortest travel, 0.45 s, 7 frames. A 1.0 s step is 15 frames: the
+// dot sets off after 2 and must be gone, 1.3 times its travel later, by frame 14, which allows 9 frames of travel.
+for (const [what, length, timing, frames] of [
+  ['a long route in a 1.6 s step', 448, gifTiming(3, 15), 15],
+  ['a short route in a 1.6 s step', 45, gifTiming(3, 15), 7],
+  ['a long route in a 1.0 s step, sped up to reach the end', 448, gifTiming(3, 15, 1.0), 9],
+]) {
+  test(`a dot travels its whole route within its step: ${what}`, () => {
+    assert.equal(dotFrames(length, timing), frames);
+  });
+}
 
 // x is in no step: only the hold lights it.
 const IDS = ['a', 'b', 'c', 'd', 'x', 'ab', 'bc', 'cd', 'bd'];

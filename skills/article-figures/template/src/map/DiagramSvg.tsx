@@ -146,11 +146,12 @@ const LegendRows: React.FC<{legend: Legend}> = ({legend}) => {
   );
 };
 
-// Draws the whole diagram: the view is fixed, so a frame never zooms or pans.
+// Draws the whole diagram: the view is fixed, so a frame never zooms or pans. The view holds the boxes and lines;
+// the outer half of an outline on its edge falls outside it, and overflow keeps that half drawn in the margin.
 export const DiagramSvg: React.FC<{diagram: Diagram; light: Light; children?: React.ReactNode}> = ({diagram, light, children}) => {
   const fade = (id: string) => (light.lits[id] === undefined ? 0 : interpolate(light.frame - light.lits[id], [0, light.fadeFrames], [0, 1], clamp01));
   return (
-    <svg id="map" data-view={diagram.view.join(' ')} viewBox={diagram.view.join(' ')} style={{position: 'absolute', inset: 0, width: '100%', height: '100%', textRendering: 'geometricPrecision'}}>
+    <svg id="map" data-view={diagram.view.join(' ')} viewBox={diagram.view.join(' ')} style={{position: 'absolute', inset: 0, width: '100%', height: '100%', overflow: 'visible', textRendering: 'geometricPrecision'}}>
       <defs>
         {(Object.keys(HEAD_SIZE) as Marker[]).map((m) => (
           <marker key={m} id={`head-${m}`} viewBox="0 0 10 10" refX={9} refY={5} markerWidth={HEAD_SIZE[m]} markerHeight={HEAD_SIZE[m]} markerUnits="userSpaceOnUse" orient="auto-start-reverse">

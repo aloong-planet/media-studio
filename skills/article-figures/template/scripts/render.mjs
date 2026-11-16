@@ -84,6 +84,8 @@ if (found.size) {
   process.exit(1);
 }
 const sha256 = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-fs.writeFileSync('out/manifest.json', `${JSON.stringify(Object.fromEntries(figures.map((f) => [f.file, sha256(path.join('out', f.file))])), null, 2)}\n`);
+// The figures as drawn go in too, so that pnpm deliver refuses a figures.md that changed after this render.
+const manifest = {files: Object.fromEntries(figures.map((f) => [f.file, sha256(path.join('out', f.file))])), figures: figures.map(({id, kind, title}) => ({id, kind, title}))};
+fs.writeFileSync('out/manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
 const measured = figures.reduce((n, f) => n + f.measureAt.length, 0);
 console.log(`ALL PASSED: ${figures.length} figures, ${measured} states measured`);

@@ -1,5 +1,26 @@
 // Run from this folder: node --test article-figures.test.mjs.
-// new-project.sh, the template's deliver script and node are real; pnpm is a stub, so nothing is installed.
+// new-project.sh, the template's deliver and fonts scripts and node are real; pnpm is a stub, so nothing is installed,
+// and in the fonts test fetch is a stub, so nothing is sent.
+//
+// Not tested, here or in template/scripts, and how each is checked instead:
+// - What runs in a rendered page needs a browser render, which no test starts: the diagram-design measurements and the
+//   not-English check in src/check/Measure.tsx (QR-001/AC-01, CON-001, REQ-003/AC-04, AC-06), the dimming and the dot
+//   drawn by src/map (REQ-003/AC-03), and scripts/render.mjs, which writes out/manifest.json with the figures it drew
+//   only when nothing failed (QR-001/AC-02) and prints a line per file (US-002/AC-01). They are checked by rendering the
+//   sample and samples broken on purpose. A test can be added once the suite can run a render.
+// - Root.tsx handing a figure's fps, stepSeconds and holdSeconds to gifTiming (US-003/AC-01): checked by rendering a GIF
+//   that sets them and reading its pass length.
+// - fonts.mjs --check, which pnpm check runs in a project: checked by pnpm check in a project made from the template.
+// - The browser copy in new-project.sh, which needs a downloaded browser: checked by making a second project on a
+//   machine that rendered once.
+// - What SKILL.md tells the agent to do: send the list and wait for agreement before making anything or changing it
+//   (US-001/AC-01 to AC-03), wait for the approval of a new preview (US-002/AC-02), write the alt text in the article's
+//   language (US-002/AC-03), lower the frame rate or shorten the pass (US-003/AC-01), draw the cover as a design
+//   (REQ-004/AC-02), and send no preview while a check fails (QR-001/AC-02). They are checked by following the skill.
+// - The template as a whole: video-tutorial's palette and fonts (CON-002; theme.test.mjs checks only that colour values
+//   stay in theme.ts and that there is no dark look), rendering with Remotion (CON-003), video-tutorial left unchanged
+//   (CON-004: git diff of skills/video-tutorial against the default branch is empty), and no publisher named (CON-005:
+//   a search of the skill for one finds nothing).
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import crypto from 'node:crypto';
@@ -22,7 +43,9 @@ function setUp() {
   cpSync(join(here, 'template'), join(skill, 'template'), {recursive: true, filter: (p) => !NOT_SHIPPED.test(p)});
   const bin = join(root, 'bin');
   mkdirSync(bin);
-  writeFileSync(join(bin, 'pnpm'), '#!/bin/sh\nexit 0\n');
+  // Like pnpm install: .modules.yaml is written once every package is in place, and a failed install leaves none.
+  const fail = join(bin, 'fail');
+  writeFileSync(join(bin, 'pnpm'), `#!/bin/sh\nif [ -f '${fail}' ]; then echo 'ERR_PNPM_FETCH: network error' >&2; exit 1; fi\nmkdir -p node_modules && : > node_modules/.modules.yaml\n`);
   chmodSync(join(bin, 'pnpm'), 0o755);
   const repo = join(root, 'repo');
   const article = join(repo, 'posts/my-article');
@@ -31,10 +54,13 @@ function setUp() {
   spawnSync('git', ['-c', 'init.defaultBranch=main', 'init', '-q', repo]);
   const env = {HOME: join(root, 'home'), PATH: `${bin}:${process.env.PATH}`};
   return {
+    root,
+    skill,
     repo,
     article,
     project: join(article, 'assets/sources/figures'),
     images: join(article, 'assets/images'),
+    failInstalls: (on) => (on ? writeFileSync(fail, '') : rmSync(fail, {force: true})),
     newProject: (file = join(article, 'source.md')) => spawnSync('/bin/sh', [join(skill, 'new-project.sh'), file], {env, encoding: 'utf8'}),
     cleanup: () => rmSync(root, {recursive: true, force: true}),
   };
@@ -87,12 +113,74 @@ test('a folder that already holds a figures project is worked in, not written ov
   m.cleanup();
 });
 
+test('a project whose packages failed to install gets them when new-project.sh runs again', () => {
+  const m = setUp();
+  m.failInstalls(true);
+  assert.equal(m.newProject().status, 1);
+  writeFileSync(join(m.project, 'figures.md'), 'the agreed list');
+  m.failInstalls(false);
+  const result = m.newProject();
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(existsSync(join(m.project, 'node_modules/.modules.yaml')), result.stdout);
+  assert.equal(readFileSync(join(m.project, 'figures.md'), 'utf8'), 'the agreed list');
+  m.cleanup();
+});
+
+// Finder writes .DS_Store into any folder it shows, the skill's own template included.
+for (const [what, change, status] of [
+  ['a .DS_Store in src passes', (m) => writeFileSync(join(m.project, 'src/.DS_Store'), 'Finder'), 0],
+  ['a .DS_Store the template brought passes', null, 0],
+  ['an edited source fails', (m) => writeFileSync(join(m.project, 'src/theme.ts'), `${readFileSync(join(m.project, 'src/theme.ts'), 'utf8')}// edited\n`), 1],
+]) {
+  test(`pnpm check compares src and scripts with the template: ${what}`, () => {
+    const m = setUp();
+    if (!change) writeFileSync(join(m.skill, 'template/scripts/.DS_Store'), 'Finder');
+    assert.equal(m.newProject().status, 0);
+    change?.(m);
+    // Without NODE_TEST_CONTEXT, which would make the inner run report to this one and exit 0 whatever it found.
+    const {NODE_TEST_CONTEXT, ...env} = process.env;
+    const result = spawnSync(process.execPath, ['--test', 'scripts/template.test.mjs'], {cwd: m.project, env, encoding: 'utf8'});
+    assert.equal(result.status, status, result.stdout);
+    m.cleanup();
+  });
+}
+
 test('a Markdown file that does not exist makes no project', () => {
   const m = setUp();
   const result = m.newProject(join(m.article, 'missing.md'));
   assert.equal(result.status, 1);
   assert.match(result.stderr, /No such article/);
   assert.equal(existsSync(join(m.article, 'assets')), false);
+  m.cleanup();
+});
+
+test('pnpm fonts sends Google Fonts the English characters one by one in code order, never the text of a figure', () => {
+  const m = setUp();
+  assert.equal(m.newProject().status, 0);
+  const text = '缓存未命中时请求转发';
+  writeFileSync(join(m.project, 'src/data/note.ts'), `export const NOTE = '${text}';\n`);
+  // fetch is replaced: each request's text parameter is written down, and a tiny font comes back.
+  const sentFile = join(m.root, 'sent.txt');
+  const stub = join(m.root, 'fetch-stub.mjs');
+  writeFileSync(
+    stub,
+    `import fs from 'node:fs';
+globalThis.fetch = async (url) => {
+  const u = new URL(url);
+  if (u.hostname !== 'fonts.googleapis.com') return {arrayBuffer: async () => new ArrayBuffer(4)};
+  fs.appendFileSync(${JSON.stringify(sentFile)}, JSON.stringify(u.searchParams.get('text')) + '\\n');
+  return {text: async () => 'src: url(https://fonts.gstatic.com/s/x.woff2)'};
+};
+`,
+  );
+  const result = spawnSync(process.execPath, ['--import', stub, 'scripts/fonts.mjs'], {cwd: m.project, encoding: 'utf8'});
+  assert.equal(result.status, 0, result.stderr);
+  const sent = readFileSync(sentFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+  assert.equal(sent.length, 6); // three weights of two faces
+  for (const chars of sent) {
+    assert.deepEqual([...text].filter((c) => chars.includes(c)), []);
+    assert.ok([...chars].every((c, i, all) => i === 0 || all[i - 1].codePointAt(0) < c.codePointAt(0)), chars);
+  }
   m.cleanup();
 });
 
@@ -116,7 +204,12 @@ function rendered() {
   const out = {'cover.png': 'new cover', 'a.png': 'same a', 'b.gif': 'gif b'};
   mkdirSync(join(m.project, 'out'));
   for (const [name, content] of Object.entries(out)) writeFileSync(join(m.project, 'out', name), content);
-  writeFileSync(join(m.project, 'out/manifest.json'), JSON.stringify(Object.fromEntries(Object.entries(out).map(([n, c]) => [n, sha256(c)]))));
+  const figures = [
+    {id: 'cover', kind: 'cover', title: 'Sessions that run themselves'},
+    {id: 'a', kind: 'still', title: 'Human in the loop'},
+    {id: 'b', kind: 'gif', title: 'Compact, then wake'},
+  ];
+  writeFileSync(join(m.project, 'out/manifest.json'), JSON.stringify({files: Object.fromEntries(Object.entries(out).map(([n, c]) => [n, sha256(c)])), figures}));
   mkdirSync(m.images, {recursive: true});
   writeFileSync(join(m.images, 'cover.png'), 'old cover');
   writeFileSync(join(m.images, 'a.png'), 'same a');
@@ -158,19 +251,22 @@ test('approved files go into the article, older files under the same name are ke
   m.cleanup();
 });
 
-test('nothing is copied without a passed render, or when a rendered file changed after it', () => {
-  for (const spoil of [
-    (m) => rmSync(join(m.project, 'out/manifest.json')),
-    (m) => writeFileSync(join(m.project, 'out/a.png'), 'edited after the render'),
-    (m) => writeFileSync(join(m.project, 'figures.md'), readFileSync(join(m.project, 'figures.md'), 'utf8').replace(/^\| `b\.gif`.*\n/m, '')),
-  ]) {
+// Each case reaches deliver's check through another of what it reads: the manifest, a rendered file whose content
+// changed or that is gone, and the list in figures.md. What the check decides is tested in template/scripts/delivery.test.mjs.
+for (const [what, spoil] of [
+  ['there is no passed render', (m) => rmSync(join(m.project, 'out/manifest.json'))],
+  ['a rendered file changed after the render', (m) => writeFileSync(join(m.project, 'out/a.png'), 'edited after the render')],
+  ['a rendered file is gone after the render', (m) => rmSync(join(m.project, 'out/b.gif'))],
+  ['a row was added to figures.md after the render', (m) => writeFileSync(join(m.project, 'figures.md'), `${readFileSync(join(m.project, 'figures.md'), 'utf8')}| \`c.png\` | §6 | still | Later | Added after the preview | 后加的图 |\n`)],
+]) {
+  test(`nothing is copied when ${what}`, () => {
     const m = rendered();
     spoil(m);
     const before = snapshot(m.images);
     const result = m.deliver();
-    assert.equal(result.status, 1);
-    assert.match(result.stderr, /pnpm render/);
+    assert.equal(result.status, 1, result.stdout);
+    assert.match(result.stderr, /run pnpm render/);
     assert.deepEqual(snapshot(m.images), before);
     m.cleanup();
-  }
-});
+  });
+}
