@@ -48,7 +48,8 @@ function setUp() {
   cpSync(join(here, 'template'), join(skill, 'template'), {recursive: true, filter: (p) => !NOT_SHIPPED.test(p)});
   const bin = join(root, 'bin');
   mkdirSync(bin);
-  // Like pnpm 9's install: .modules.yaml is written once every package is in place, and a failed install leaves none.
+  // Like pnpm 9's install: .modules.yaml is written once every package is in place, and an install stopped by a
+  // download leaves none.
   // Under a folder holding pnpm-workspace.yaml it installs that workspace, not the folder it runs in, unless told
   // --ignore-workspace.
   const fail = join(bin, 'fail');
@@ -81,9 +82,9 @@ mkdir -p "$into/node_modules" && : > "$into/node_modules/.modules.yaml"
     project: join(article, 'assets/sources/figures'),
     images: join(article, 'assets/images'),
     failInstalls: (on) => (on ? writeFileSync(fail, '') : rmSync(fail, {force: true})),
-    // An install that ends well and puts nothing in the project, as one that installed an enclosing workspace did.
+    // An install that exits 0 and puts no packages in the project, as installing an enclosing workspace instead does.
     installNothing: () => writeFileSync(nothing, ''),
-    // Run as SKILL.md says, by its own path, so the script must be executable as shipped.
+    // Run as SKILL.md says, by its own path, so that a script not executable in the checkout fails every process test.
     newProject: (file = join(article, 'source.md')) => spawnSync(join(skill, 'new-project.sh'), [file], {env, encoding: 'utf8'}),
     cleanup: () => rmSync(root, {recursive: true, force: true}),
   };

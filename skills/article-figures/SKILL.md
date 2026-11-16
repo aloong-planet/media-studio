@@ -50,7 +50,7 @@ when_to_use: 用户提到公众号或博客的配图、动图、封面，要图�
 
 ### 第 2 步：建项目
 
-1. 必须运行 `<skill 目录>/new-project.sh <文章的 Markdown 文件>`。它报 `already holds a figures project` 时，在那个项目里接着做；报 `not empty` 时，按「入口」表最后一行办。
+1. 必须运行 `<skill 目录>/new-project.sh <文章的 Markdown 文件>`。它报 `already holds a figures project` 时，在那个项目里接着做；报 `not empty` 时，按「入口」表最后一行办；报其他错误、又不是网络错误的，必须把报错发给用户并停下。
 2. 必须把用户同意的清单写进 `figures.md`，替换模板里的样例表；上下文被压缩后必须以 `figures.md` 为准，不得凭记忆。
 3. 清单同意之后，要加图、删图或改清单里的任何一格时，必须先把改后的清单发给用户，用户同意后才能改 `figures.md` 和图。
 
