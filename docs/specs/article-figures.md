@@ -46,7 +46,7 @@ A static figure is a PNG file 2160 px wide, whose height follows the proportions
 
 - article-figures::REQ-003/AC-01: An animated figure is a GIF file 1080 px wide at 15 frames per second.
 - article-figures::REQ-003/AC-02: The GIF loops forever, and one pass lasts at most 12 seconds.
-- article-figures::REQ-003/AC-03: The diagram lights up step by step. Each step lights its own boxes and lines and dims the rest, and a dot travels along each line the step lights.
+- article-figures::REQ-003/AC-03: The diagram lights up step by step. Each step lights its own boxes and lines and keeps those of the steps before it lit, everything no step has lit yet stays dimmed, and a dot travels along each line the step lights.
 - article-figures::REQ-003/AC-04: Each step shows a step marker beside the line it lights. The markers of passed steps are hollow, and the current step's marker is solid.
 - article-figures::REQ-003/AC-05: After the last step the whole diagram is lit and held for a moment before the next pass begins.
 - article-figures::REQ-003/AC-06: Every frame shows the whole diagram; the view never zooms or pans.
