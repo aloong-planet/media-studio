@@ -97,16 +97,20 @@ Applies to: the skill's instructions and template. They name no particular manus
 
 - The `assets/sources/figures/` directory already holds a project made by this skill: the skill works in that project, so that a changed or smaller figure is rendered from the same sources.
 - That project's packages did not finish installing, as when the network failed: making the project again installs them and changes none of its files.
+- The article sits inside a repository that is a pnpm workspace whose packages do not include the figures project: the project installs its own packages from its own lockfile, and nothing outside the article's `assets/` changes.
+- Installing ends without the project's packages in place: making the project fails with an error that names the project, and reports no project as ready.
 - The `assets/sources/figures/` directory exists, is not empty and holds no project made by this skill: the skill writes nothing into it and asks the author what to do.
 - A file with a figure's name already exists in `assets/images/`: article-figures::REQ-005 applies.
 - Two names count as one when the folder takes them for one file. In a folder that ignores letter case, as macOS volumes do by default, `Cover.png` is an older file under the name `cover.png`, and `Cover-v1.png` takes the number 1 from `cover-v1.png`. In a case-sensitive folder they are different files.
 - An entry under a figure's name that is not a plain file, such as a link or a folder, is kept like an older, different file under `<name>-v<n>.<extension>`.
-- Copying a figure fails after the older file was renamed: the older file gets its name back, the figures copied before it stay, and nothing more is copied.
+- Copying a figure fails after the older file was renamed: the older file gets its name back, the figures copied before it stay, and nothing more is copied. The report still lists each figure as copied, already there or not copied, and every older file that stays renamed, and it names the copy that failed.
 - The figure list changes after the last passed render, by a row added or removed or a kind or title changed: no file is copied until the figures are rendered again and a new preview approved.
 - The figure list names a file twice: the figures are not rendered.
 - A platform refuses a GIF: article-figures::US-003 applies.
 - A shorter step makes the dot travel faster, so that it still reaches the end of its line within the step. A step or a hold too short for what it lights to come on fully, or for the dot to travel, is refused, and the GIF is not rendered.
 - Text inside a figure is not English: the figure's check fails, and article-figures::QR-001/AC-02 applies to it as to a broken diagram rule.
+- Text inside a figure holds a sign English uses that IBM Plex Sans or IBM Plex Mono lacks, such as `↯` or a thin space: it is refused as text that is not English, so that no text is drawn in another font.
+- A check that refuses text names each refused character by its code point, so that a character that looks like an accepted one can be found.
 
 ## Implementation Decisions
 
