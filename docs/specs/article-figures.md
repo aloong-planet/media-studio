@@ -116,10 +116,10 @@ Applies to: the skill's instructions and template. They name no particular manus
 
 - The figure list the author agreed to is kept as a Markdown file in the project directory. After a context compaction the skill works from that file, not from memory.
 - The project's rendered output stays in an output directory inside the project until the preview is approved. Approval copies files out of it, and the project keeps its own copies.
-- A render that passed every check leaves a record in the output directory: the content hash of each rendered file, and each figure's file name, kind and title. Copying reads only that record. It refuses when there is none, when a file no longer has its recorded hash, or when the figure list no longer matches the recorded figures.
+- A render that passed every check leaves a record in the output directory: the content hash of each rendered file under its file name, and each figure's id (its file name without the extension), kind and title. Copying copies exactly the files of that record. It refuses when there is none, when a file no longer has its recorded hash, or when the figure list no longer matches the recorded figures.
 - Every figure is drawn 720 design units wide, and a diagram is never scaled: a PNG is rendered at 3 times (2160 px) and a GIF at 1.5 times (1080 px), so text has the same size in every figure. A diagram's view is at most 672 units wide. The cover is the exception to all of this: it is 1920 × 820 px, rendered at 1 time, and its diagram is scaled to fit the panel on the right of the cover.
 - The template's diagram code comes from `video-tutorial`'s template. It is adapted so that one project draws many diagrams and renders them to PNG and GIF.
-- The fonts are subsets of IBM Plex Sans and IBM Plex Mono, fetched from Google Fonts for the characters the figures use. The request sends Google Fonts only the characters English uses, each once and in code order, and never the figures' text.
+- The fonts are subsets of IBM Plex Sans and IBM Plex Mono, fetched from Google Fonts for the characters in the project's source files. The request sends Google Fonts only the characters English uses, each once and in code order, and never the figures' text.
 
 ## Out of Scope
 
