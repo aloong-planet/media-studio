@@ -1,0 +1,28 @@
+{
+  "name": "article-figures",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "fonts": "node scripts/fonts.mjs",
+    "studio": "remotion studio src/index.ts",
+    "check": "tsc --noEmit && node scripts/fonts.mjs --check && node --test scripts/",
+    "render": "node scripts/render.mjs",
+    "deliver": "node scripts/deliver.mjs"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.540",
+    "@remotion/cli": "4.0.540",
+    "@remotion/fonts": "4.0.540",
+    "@remotion/paths": "4.0.540",
+    "@remotion/renderer": "4.0.540",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.540"
+  },
+  "devDependencies": {
+    "@types/node": "24.9.1",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "typescript": "5.9.3"
+  }
+}
