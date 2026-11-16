@@ -137,7 +137,7 @@ const checkSvg = (svg: SVGSVGElement, root: HTMLElement, problems: string[], isS
   const bands = [...svg.querySelectorAll<SVGRectElement>('[data-box="band"] > rect')].map((r) => ({rect: rectOf(r), fill: parse(getComputedStyle(r).fill).rgb}));
   const swatches = [...svg.querySelectorAll<SVGRectElement>('[data-legend] rect')].map(rectOf);
 
-  // A figure shows exactly the diagram's view, so anything outside it is cut off.
+  // The view is all the room a diagram has: what lies outside it is drawn over the figure's margin or past its edge.
   const [vx, vy, vw, vh] = svg.getAttribute('data-view')!.split(' ').map(Number);
   const SLACK = 0.01; // the transform above leaves rounding errors such as 929.9999999999999
   const outside = (x: number, y: number) => x < vx - SLACK || y < vy - SLACK || x > vx + vw + SLACK || y > vy + vh + SLACK;

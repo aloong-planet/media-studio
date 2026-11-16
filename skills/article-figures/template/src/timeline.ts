@@ -24,7 +24,9 @@ export function gifTiming(steps: number, fps: number = GIF_FPS, stepSeconds = 1.
   const total = steps * stepFrames + holdFrames;
   const seconds = total / fps;
   if (seconds > MAX_PASS_SECONDS) throw new Error(`${steps} steps make a ${seconds.toFixed(1)} s pass, over ${MAX_PASS_SECONDS} s`);
+  // A step and the hold are each measured on their last frame, after what they light has come on.
   if (dotRoom(stepFrames) < 2 || stepFrames - 1 < fadeFrames) throw new Error(`a step of ${stepSeconds} s is too short for its light to settle and its dot to travel`);
+  if (holdFrames - 1 < fadeFrames) throw new Error(`a hold of ${holdSeconds} s is too short for the whole diagram to light up`);
   return {fps, stepFrames, holdFrames, fadeFrames, total};
 }
 

@@ -3,7 +3,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import {planCopy} from './lib/copy.mjs';
+import {applyPlan, planCopy} from './lib/copy.mjs';
 import {deliveryProblems} from './lib/delivery.mjs';
 import {parseFigureList} from './lib/figure-list.mjs';
 
@@ -26,21 +26,18 @@ if (problems.length) {
 
 const images = path.resolve('../../images');
 fs.mkdirSync(images, {recursive: true});
-const existing = new Map(
-  fs
-    .readdirSync(images, {withFileTypes: true})
-    .filter((e) => e.isFile())
-    .map((e) => [e.name, sha256(path.join(images, e.name))]),
-);
-const plan = planCopy(rows.map((r) => ({name: r.file, sha256: manifest.files[r.file]})), existing);
-for (const p of plan) {
-  if (p.action !== 'copy') continue;
-  // The new file goes in under a temporary name first: a copy that fails leaves the older file where it was.
-  const part = path.join(images, `.${p.name}.part`);
-  fs.copyFileSync(path.join('out', p.name), part);
-  if (p.rename) fs.renameSync(path.join(images, p.rename.from), path.join(images, p.rename.to));
-  fs.renameSync(part, path.join(images, p.name));
-}
+// Every entry counts, links and folders too, with a content hash only for a plain file.
+const entries = new Map(fs.readdirSync(images, {withFileTypes: true}).map((e) => [e.name, e.isFile() ? sha256(path.join(images, e.name)) : null]));
+// The folder itself tells whether letter case tells names apart: a probe file is looked up under its name in capitals.
+const probe = `.case-probe-${process.pid}`;
+fs.writeFileSync(path.join(images, probe), '');
+const ignoreCase = fs.existsSync(path.join(images, probe.toUpperCase()));
+fs.unlinkSync(path.join(images, probe));
+const plan = planCopy(rows.map((r) => ({name: r.file, sha256: manifest.files[r.file]})), {entries, ignoreCase});
+applyPlan(plan, {
+  rename: (from, to) => fs.renameSync(path.join(images, from), path.join(images, to)),
+  copy: (name) => fs.copyFileSync(path.join('out', name), path.join(images, name), fs.constants.COPYFILE_EXCL),
+});
 
 const report = [`Copied into ${images}:`];
 plan.forEach((p, i) => {

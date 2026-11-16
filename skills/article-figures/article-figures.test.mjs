@@ -4,13 +4,18 @@
 //
 // Not tested, here or in template/scripts, and how each is checked instead:
 // - What runs in a rendered page needs a browser render, which no test starts: the diagram-design measurements and the
-//   not-English check in src/check/Measure.tsx (QR-001/AC-01, CON-001, REQ-003/AC-04, AC-06), the dimming and the dot
-//   drawn by src/map (REQ-003/AC-03), and scripts/render.mjs, which writes out/manifest.json with the figures it drew
-//   only when nothing failed (QR-001/AC-02) and prints a line per file (US-002/AC-01). They are checked by rendering the
-//   sample and samples broken on purpose. A test can be added once the suite can run a render.
+//   not-English check in src/check/Measure.tsx (QR-001/AC-01, CON-001, REQ-003/AC-04, AC-06), the dimming, the dot and
+//   the outlines drawn past the view's edge by src/map (REQ-003/AC-03), and scripts/render.mjs, which writes
+//   out/manifest.json with the figures it drew only when nothing failed (QR-001/AC-02) and prints a line per file
+//   (US-002/AC-01). They are checked by rendering the sample and samples broken on purpose, and by reading the pixels of
+//   an outline on the view's edge. A test can be added once the suite can run a render.
 // - Root.tsx handing a figure's fps, stepSeconds and holdSeconds to gifTiming (US-003/AC-01): checked by rendering a GIF
 //   that sets them and reading its pass length.
 // - fonts.mjs --check, which pnpm check runs in a project: checked by pnpm check in a project made from the template.
+// - The command pnpm check runs, whose test pattern Node 22 and 24 need where Node 26 also takes a folder: checked by
+//   pnpm check on each of them in a project made from the template.
+// - deliver.mjs asking a case-sensitive folder: checked by delivering into a case-sensitive volume. On a folder that
+//   ignores case, the test of an older Cover.png checks it.
 // - The browser copy in new-project.sh, which needs a downloaded browser: checked by making a second project on a
 //   machine that rendered once.
 // - What SKILL.md tells the agent to do: send the list and wait for agreement before making anything or changing it
@@ -24,7 +29,7 @@
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import crypto from 'node:crypto';
-import {chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync} from 'node:fs';
+import {chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {dirname, join, relative} from 'node:path';
 import {test} from 'node:test';
@@ -157,8 +162,9 @@ test('a Markdown file that does not exist makes no project', () => {
 test('pnpm fonts sends Google Fonts the English characters one by one in code order, never the text of a figure', () => {
   const m = setUp();
   assert.equal(m.newProject().status, 0);
+  // The Chinese text must not be sent; the arrow, which English uses and no other source holds, must be.
   const text = '缓存未命中时请求转发';
-  writeFileSync(join(m.project, 'src/data/note.ts'), `export const NOTE = '${text}';\n`);
+  writeFileSync(join(m.project, 'src/data/note.ts'), `export const NOTE = '${text}', MARK = '↯';\n`);
   // fetch is replaced: each request's text parameter is written down, and a tiny font comes back.
   const sentFile = join(m.root, 'sent.txt');
   const stub = join(m.root, 'fetch-stub.mjs');
@@ -179,6 +185,7 @@ globalThis.fetch = async (url) => {
   assert.equal(sent.length, 6); // three weights of two faces
   for (const chars of sent) {
     assert.deepEqual([...text].filter((c) => chars.includes(c)), []);
+    assert.ok(chars.includes('↯'), chars);
     assert.ok([...chars].every((c, i, all) => i === 0 || all[i - 1].codePointAt(0) < c.codePointAt(0)), chars);
   }
   m.cleanup();
@@ -248,6 +255,40 @@ test('approved files go into the article, older files under the same name are ke
       '',
     ].join('\n'),
   );
+  m.cleanup();
+});
+
+// Whether the temporary folder takes Cover.png and cover.png for one name, as macOS volumes do unless made case-sensitive.
+const tmpIgnoresCase = (() => {
+  const dir = mkdtempSync(join(tmpdir(), 'af-case-'));
+  writeFileSync(join(dir, 'probe'), '');
+  const ignores = existsSync(join(dir, 'PROBE'));
+  rmSync(dir, {recursive: true, force: true});
+  return ignores;
+})();
+
+test('an older file whose name differs in letter case is the one kept, in a folder that ignores case', {skip: !tmpIgnoresCase && 'the temporary folder tells letter case apart'}, () => {
+  const m = rendered();
+  rmSync(join(m.images, 'cover.png'));
+  writeFileSync(join(m.images, 'Cover.png'), 'old cover');
+  const result = m.deliver();
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(readdirSync(m.images).sort(), ['Cover-v1.png', 'a.png', 'b.gif', 'cover.png']);
+  assert.equal(readFileSync(join(m.images, 'Cover-v1.png'), 'utf8'), 'old cover');
+  assert.match(result.stdout, /Renamed to keep the older file:\n {2}Cover\.png -> Cover-v1\.png\n$/);
+  m.cleanup();
+});
+
+test('a link under a figure\'s name is kept like an older file', () => {
+  const m = rendered();
+  const shared = join(m.root, 'shared.gif');
+  writeFileSync(shared, 'a picture other articles show');
+  symlinkSync(shared, join(m.images, 'b.gif'));
+  const result = m.deliver();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(readlinkSync(join(m.images, 'b-v1.gif')), shared);
+  assert.equal(readFileSync(join(m.images, 'b.gif'), 'utf8'), 'gif b');
+  assert.equal(readFileSync(shared, 'utf8'), 'a picture other articles show');
   m.cleanup();
 });
 

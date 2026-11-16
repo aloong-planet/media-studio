@@ -29,9 +29,14 @@ for (const [what, args, error] of [
   ['a pass over 12 seconds', [7, 15], /7 steps make a 13\.2 s pass, over 12 s/],
   // 0.3 s is 5 frames: without the 2 before the dot sets off and the last one, 2 are left, which fit 1.3 times
   // a travel of 1 frame only, and a dot needs at least 2.
-  ['a step too short for its dot', [3, 15, 0.3], /a step of 0\.3 s is too short/],
+  // At 10 frames a second 0.5 s is 5 frames: the light settles in 3, but without the 2 before the dot sets off and the
+  // last one, 2 are left, which fit 1.3 times a travel of 1 frame only, and a dot needs at least 2.
+  ['a step too short for its dot', [3, 10, 0.5], /a step of 0\.5 s is too short/],
   // At 30 frames a second 0.3 s is 9 frames, room enough for the dot, but the light takes 10 frames to come on.
   ['a step too short for its light to settle', [3, 30, 0.3], /a step of 0\.3 s is too short/],
+  // The hold is measured on its last frame, which has to come after the 5 frames the last lines take to light up.
+  ['no hold', [3, 15, 1.6, 0], /a hold of 0 s is too short/],
+  ['a hold too short to light the whole diagram', [3, 15, 1.6, 0.2], /a hold of 0\.2 s is too short/],
 ]) {
   test(`a timing the article cannot use is refused: ${what}`, () => {
     assert.throws(() => gifTiming(...args), error);
