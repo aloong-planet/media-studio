@@ -48,9 +48,24 @@ function setUp() {
   cpSync(join(here, 'template'), join(skill, 'template'), {recursive: true, filter: (p) => !NOT_SHIPPED.test(p)});
   const bin = join(root, 'bin');
   mkdirSync(bin);
-  // Like pnpm install: .modules.yaml is written once every package is in place, and a failed install leaves none.
+  // Like pnpm 9's install: .modules.yaml is written once every package is in place, and a failed install leaves none.
+  // Under a folder holding pnpm-workspace.yaml it installs that workspace, not the folder it runs in, unless told
+  // --ignore-workspace.
   const fail = join(bin, 'fail');
-  writeFileSync(join(bin, 'pnpm'), `#!/bin/sh\nif [ -f '${fail}' ]; then echo 'ERR_PNPM_FETCH: network error' >&2; exit 1; fi\nmkdir -p node_modules && : > node_modules/.modules.yaml\n`);
+  const nothing = join(bin, 'nothing');
+  writeFileSync(
+    join(bin, 'pnpm'),
+    `#!/bin/sh
+if [ -f '${fail}' ]; then echo 'ERR_PNPM_FETCH: network error' >&2; exit 1; fi
+if [ -f '${nothing}' ]; then exit 0; fi
+into=$PWD
+case " $* " in
+  *' --ignore-workspace '*) ;;
+  *) d=$PWD; while [ "$d" != / ]; do if [ -f "$d/pnpm-workspace.yaml" ]; then into=$d; break; fi; d=$(dirname "$d"); done ;;
+esac
+mkdir -p "$into/node_modules" && : > "$into/node_modules/.modules.yaml"
+`,
+  );
   chmodSync(join(bin, 'pnpm'), 0o755);
   const repo = join(root, 'repo');
   const article = join(repo, 'posts/my-article');
@@ -66,7 +81,10 @@ function setUp() {
     project: join(article, 'assets/sources/figures'),
     images: join(article, 'assets/images'),
     failInstalls: (on) => (on ? writeFileSync(fail, '') : rmSync(fail, {force: true})),
-    newProject: (file = join(article, 'source.md')) => spawnSync('/bin/sh', [join(skill, 'new-project.sh'), file], {env, encoding: 'utf8'}),
+    // An install that ends well and puts nothing in the project, as one that installed an enclosing workspace did.
+    installNothing: () => writeFileSync(nothing, ''),
+    // Run as SKILL.md says, by its own path, so the script must be executable as shipped.
+    newProject: (file = join(article, 'source.md')) => spawnSync(join(skill, 'new-project.sh'), [file], {env, encoding: 'utf8'}),
     cleanup: () => rmSync(root, {recursive: true, force: true}),
   };
 }
@@ -128,6 +146,31 @@ test('a project whose packages failed to install gets them when new-project.sh r
   assert.equal(result.status, 0, result.stderr);
   assert.ok(existsSync(join(m.project, 'node_modules/.modules.yaml')), result.stdout);
   assert.equal(readFileSync(join(m.project, 'figures.md'), 'utf8'), 'the agreed list');
+  m.cleanup();
+});
+
+test('an article inside a pnpm workspace gets its packages in its figures project, and the workspace is left as it was', () => {
+  const m = setUp();
+  // A repository that is a pnpm workspace whose packages do not include the article.
+  writeFileSync(join(m.repo, 'pnpm-workspace.yaml'), 'packages:\n  - publishers/medium/app\n  - publishers/zhihu/app\n');
+  writeFileSync(join(m.repo, 'package.json'), '{\n  "name": "studio",\n  "private": true,\n  "packageManager": "pnpm@9.12.3"\n}\n');
+  const outside = (all) => Object.fromEntries(Object.entries(all).filter(([f]) => !f.startsWith('posts/my-article/assets/')));
+  const before = snapshot(m.repo);
+  const result = m.newProject();
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(existsSync(join(m.project, 'node_modules/.modules.yaml')), result.stdout);
+  assert.equal(existsSync(join(m.repo, 'node_modules')), false);
+  assert.deepEqual(outside(snapshot(m.repo)), before);
+  m.cleanup();
+});
+
+test('an install that leaves no packages in the project stops new-project.sh, and it says so', () => {
+  const m = setUp();
+  m.installNothing();
+  const result = m.newProject();
+  assert.equal(result.status, 1, result.stdout);
+  assert.ok(result.stderr.includes(`left no packages in ${m.project}`), result.stderr);
+  assert.doesNotMatch(result.stdout, /Ready/);
   m.cleanup();
 });
 

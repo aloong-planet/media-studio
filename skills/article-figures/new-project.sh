@@ -26,7 +26,12 @@ else
   cd "$target"
   find src scripts -type f ! -path 'src/data/*' | sort | xargs shasum -a 256 > template-sums.txt
 fi
-pnpm install
+# The project keeps its own lockfile: inside a repository that is a pnpm workspace, a plain install installs the workspace.
+pnpm install --ignore-workspace
+if [ ! -f node_modules/.modules.yaml ]; then
+  echo "pnpm install ended but left no packages in $target, so the project is not ready." >&2
+  exit 1
+fi
 # The renderer's browser is a 140 MB download that a bad connection can break: one download per machine is enough.
 browser="$HOME/.cache/article-figures/chrome-headless-shell"
 if [ -f "$browser/VERSION" ]; then
