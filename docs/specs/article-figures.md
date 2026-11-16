@@ -22,7 +22,7 @@ As an author, I want the skill to read my article and propose which figures to m
 
 As an author, I want to see every rendered figure before any of them is put into my article, so that changing a figure costs only a re-render and never a second round of the article's publishing.
 
-- article-figures::US-002/AC-01: The preview gives the path of every rendered PNG and GIF file, the cover included. It gives each figure's `diagram-design` measurement results, and it names every rule that was not measured together with the reason.
+- article-figures::US-002/AC-01: The preview gives the path of every rendered PNG and GIF file, the cover included, and the path of a still image of each measured GIF state. It gives each figure's `diagram-design` measurement results, and it names every rule that was not measured together with the reason.
 - article-figures::US-002/AC-02: No file is copied into the article's `assets/images/` before the author approves the preview. A figure changed after the approval is shown in a new preview, and only that new preview's approval lets it be copied.
 - article-figures::US-002/AC-03: After the approval, the skill copies the files into the article's `assets/images/` per article-figures::REQ-005. It then reports, for each figure, the file name, the section it belongs to, and a suggested alt text in the article's language: Chinese alt text for a Chinese article and English alt text for an English one.
 
@@ -79,7 +79,7 @@ Applies to: all text inside the figures and the cover. Every piece of that text 
 
 ### article-figures::CON-002 The look of video-tutorial (direct acceptance)
 
-Applies to: every figure and the cover. They use `video-tutorial`'s daytime palette, its seven responsibility hues and three path tones, and the fonts IBM Plex Sans and IBM Plex Mono.
+Applies to: every figure and the cover. They use `video-tutorial`'s daytime palette, its seven responsibility hues and three path tones, and the fonts IBM Plex Sans and IBM Plex Mono. Every figure but the cover carries `video-tutorial`'s legend of the hues and path tones it uses.
 
 ### article-figures::CON-003 Rendered with Remotion (direct acceptance)
 
@@ -96,17 +96,26 @@ Applies to: the skill's instructions and template. They name no particular manus
 ## Failure modes and boundaries
 
 - The `assets/sources/figures/` directory already holds a project made by this skill: the skill works in that project, so that a changed or smaller figure is rendered from the same sources.
+- That project's packages did not finish installing, as when the network failed: making the project again installs them and changes none of its files.
 - The `assets/sources/figures/` directory exists, is not empty and holds no project made by this skill: the skill writes nothing into it and asks the author what to do.
 - A file with a figure's name already exists in `assets/images/`: article-figures::REQ-005 applies.
+- Two names count as one when the folder takes them for one file. In a folder that ignores letter case, as macOS volumes do by default, `Cover.png` is an older file under the name `cover.png`, and `Cover-v1.png` takes the number 1 from `cover-v1.png`. In a case-sensitive folder they are different files.
+- An entry under a figure's name that is not a plain file, such as a link or a folder, is kept like an older, different file under `<name>-v<n>.<extension>`.
+- Copying a figure fails after the older file was renamed: the older file gets its name back, the figures copied before it stay, and nothing more is copied.
+- The figure list changes after the last passed render, by a row added or removed or a kind or title changed: no file is copied until the figures are rendered again and a new preview approved.
+- The figure list names a file twice: the figures are not rendered.
 - A platform refuses a GIF: article-figures::US-003 applies.
+- A shorter step makes the dot travel faster, so that it still reaches the end of its line within the step. A step or a hold too short for what it lights to come on fully, or for the dot to travel, is refused, and the GIF is not rendered.
 - Text inside a figure is not English: the figure's check fails, and article-figures::QR-001/AC-02 applies to it as to a broken diagram rule.
 
 ## Implementation Decisions
 
 - The figure list the author agreed to is kept as a Markdown file in the project directory. After a context compaction the skill works from that file, not from memory.
 - The project's rendered output stays in an output directory inside the project until the preview is approved. Approval copies files out of it, and the project keeps its own copies.
+- A render that passed every check leaves a record in the output directory: the content hash of each rendered file, and each figure's file name, kind and title. Copying reads only that record. It refuses when there is none, when a file no longer has its recorded hash, or when the figure list no longer matches the recorded figures.
+- Every figure is drawn 720 design units wide, and a diagram is never scaled: a PNG is rendered at 3 times (2160 px) and a GIF at 1.5 times (1080 px), so text has the same size in every figure. A diagram's view is at most 672 units wide.
 - The template's diagram code comes from `video-tutorial`'s template. It is adapted so that one project draws many diagrams and renders them to PNG and GIF.
-- The fonts are subsets of IBM Plex Sans and IBM Plex Mono, fetched from Google Fonts for the characters the figures use. The request sends Google Fonts that set of characters, not the figures' text.
+- The fonts are subsets of IBM Plex Sans and IBM Plex Mono, fetched from Google Fonts for the characters the figures use. The request sends Google Fonts only the characters English uses, each once and in code order, and never the figures' text.
 
 ## Out of Scope
 
