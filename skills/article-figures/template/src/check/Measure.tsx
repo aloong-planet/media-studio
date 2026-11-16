@@ -200,7 +200,7 @@ const checkSvg = (svg: SVGSVGElement, root: HTMLElement, problems: string[], isS
       const nearest = marked.reduce((x, y) => (y.distance < x.distance ? y : x));
       if (nearest.distance - b.r > 2 * b.r) problems.push(`step ${b.no} is ${(nearest.distance - b.r).toFixed(0)} away from the line it marks, wider than itself`);
       // The colour as drawn: a line without a tone is grey until it is lit.
-      if (String(nearest.color) !== String(b.stroke)) problems.push(`step ${b.no} is drawn in rgb(${b.stroke}) but the line beside it in rgb(${nearest.color})`);
+      if (String(nearest.color) !== String(b.stroke)) problems.push(`step ${b.no} is coloured ${b.stroke.join(',')} but the line beside it ${nearest.color.join(',')}`);
     }
     for (const o of badges.slice(i + 1)) if (Math.hypot(b.x - o.x, b.y - o.y) - b.r - o.r < MIN_BADGE_GAP) problems.push(`step ${b.no} touches step ${o.no}`);
   });
