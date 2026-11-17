@@ -1,12 +1,13 @@
 # media-studio
 
-Agent skills for making app demos and explainer videos. The skill instructions are written in Chinese.
+Agent skills for making app demos, explainer videos and article figures. The skill instructions are written in Chinese.
 
 | Skill | What it does |
 |---|---|
 | [`app-demo-video`](skills/app-demo-video/SKILL.md) | Makes app introduction videos with scenario animation, real interactions, narration and subtitles. English by default, with a Chinese narration option. |
 | [`video-tutorial`](skills/video-tutorial/SKILL.md) | Makes a video from an article or diagram, with Chinese narration, burned-in subtitles and two covers (3:4 and 4:3). |
-| [`diagram-design`](skills/diagram-design/SKILL.md) | Rules for box-and-line diagrams: colours, step markers, lines and arrows. `video-tutorial` follows them. |
+| [`article-figures`](skills/article-figures/SKILL.md) | Draws an article's diagrams, animated diagrams and cover with English text, as PNG and GIF files, and copies them into the article once you approve the preview. |
+| [`diagram-design`](skills/diagram-design/SKILL.md) | Rules for box-and-line diagrams: colours, step markers, lines and arrows. `video-tutorial` and `article-figures` follow them. |
 
 ## Before you start
 
@@ -30,11 +31,13 @@ The skill asks where the recording is and what it says, then keeps a converted c
 - `python3.12`, unless `~/.venv/mlx-tts` already exists.
 - About 5.5 GB of disk space, plus roughly 1 GB for each video project.
 
+`article-figures` needs `node` and `pnpm`, and about 1 GB of disk space for each article's figures project. The first render downloads a browser for rendering and keeps a copy of about 0.5 GB in `~/.cache/article-figures/`, which later projects reuse.
+
 `diagram-design` is only text and has no requirements.
 
 ## Install
 
-This needs Node.js 22.20 or later. Run one of these commands. Each installs all three skills for every project and asks no questions. Keep `diagram-design` with `video-tutorial`, which calls it. `app-demo-video` is independent of those two skills.
+This needs Node.js 22.20 or later. Run one of these commands. Each installs all four skills for every project and asks no questions. Keep `diagram-design` with `video-tutorial` and `article-figures`, which call it. `app-demo-video` is independent of the other skills.
 
 For Claude Code only, with the files in `~/.claude/skills/`:
 
@@ -56,16 +59,18 @@ npx skills add aloong-planet/media-studio -g -a claude-code -a universal -y
 
 Then ask Claude Code for an explainer video, or run `/video-tutorial`. It confirms the requirements with you before it starts, including which voice to use, and renders the mp4 only after you approve the preview.
 
+For an article's figures, run `/article-figures` and name the article's Markdown file. It proposes a figure list and draws only after you agree to it. It copies the figures into the article's `assets/images/` only after you approve the preview, and keeps any older, different file of the same name under a numbered name such as `cover-v1.png`.
+
 For an app introduction, invoke `$app-demo-video` in Codex or `/app-demo-video` in Claude Code. The first deliverable is the script for review; narration and animation production follow approval. Ask for Chinese explicitly to change the default language. For an existing video, adaptation translates its final approved script with natural phrasing; changes to content or story order require separate approval and a source/translation comparison. Language versions use separate project directories. Chinese adaptation includes a shot-by-shot [localization checklist and verification](skills/app-demo-video/references/visuals.md#素材本地化清单), covering visible text, real app recordings, subtitles and covers as well as narration. Existing source-language projects remain unchanged.
 
 To update or remove the skills:
 
 ```sh
-npx skills update app-demo-video video-tutorial diagram-design -g
-npx skills remove app-demo-video video-tutorial diagram-design -g -y
+npx skills update app-demo-video video-tutorial article-figures diagram-design -g
+npx skills remove app-demo-video video-tutorial article-figures diagram-design -g -y
 ```
 
-Removing the skills does not delete your voices, the Python environment or the models. To delete your voices, remove `~/.video-tutorial`.
+Removing the skills does not delete your voices, the Python environment, the models or the rendering browser in `~/.cache/article-figures/`. To delete your voices, remove `~/.video-tutorial`.
 
 ## What `install.sh` adds
 
@@ -78,8 +83,8 @@ Downloads try `huggingface.co` first, then `hf-mirror.com` if that fails or writ
 
 ## What leaves your machine
 
-Narration and transcription run locally, so the script is not sent to an online service. `pnpm fonts` sends Google Fonts only the set of characters used. `npx skills` sends anonymous usage data, including the repository and skill names; set `DISABLE_TELEMETRY=1` to turn that off.
+Narration and transcription run locally, so the script is not sent to an online service. `pnpm fonts` sends Google Fonts only the set of characters used. For `article-figures` that set is the printable ASCII characters and any other character English uses that the project's source files contain, each once and in code order, never the figures' text. `npx skills` sends anonymous usage data, including the repository and skill names; set `DISABLE_TELEMETRY=1` to turn that off.
 
 ## License
 
-[MIT](LICENSE) covers this repository. The models and dependencies have their own licenses. Remotion, which renders the video, requires a company license for organizations that do not qualify for its free license.
+[MIT](LICENSE) covers this repository. The models and dependencies have their own licenses. Remotion, which renders the videos and figures, requires a company license for organizations that do not qualify for its free license.
