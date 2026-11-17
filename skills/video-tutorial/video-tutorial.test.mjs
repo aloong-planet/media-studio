@@ -1,4 +1,6 @@
-// Run from this folder: node --test new-project.test.mjs. The template and node are real; pnpm is a stub, so nothing is installed.
+// Run from this folder: node --test video-tutorial.test.mjs. The template and node are real; pnpm is a stub, so nothing is installed.
+// Not tested: the test pattern in the command pnpm check runs, which Node 22 and 24 need where Node 26 also takes a
+// folder. Check it by running that command on Node 22 and 24 in a project made by new-project.sh; both runs must pass.
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from 'node:fs';
@@ -28,6 +30,7 @@ function setUp() {
   chmodSync(join(bin, 'pnpm'), 0o755);
   return {
     root,
+    skill,
     voices,
     target: join(root, 'video'),
     addVoice(name, bytes, words) {
@@ -144,5 +147,58 @@ test('a directory that is not empty is refused and left alone', () => {
   assert.equal(result.status, 1);
   assert.match(result.stderr, /not empty/);
   assert.deepEqual(readdirSync(m.target), ['keep.txt']);
+  m.cleanup();
+});
+
+// Each case gives a change to the project and the exit code the template comparison must give. Finder writes .DS_Store
+// into any folder it shows, here or in the skill's own template.
+for (const [what, change, status] of [
+  ['a .DS_Store in src passes', (m) => writeFileSync(join(m.target, 'src/.DS_Store'), 'Finder'), 0],
+  ['a .DS_Store the template brought passes', null, 0],
+  ['an edited source fails', (m) => writeFileSync(join(m.target, 'src/theme.ts'), `${readFileSync(join(m.target, 'src/theme.ts'), 'utf8')}// edited\n`), 1],
+]) {
+  test(`pnpm check compares src and scripts with the template: ${what}`, () => {
+    const m = setUp();
+    m.addVoice('mine', 'audio', '这是我的声音。\n');
+    if (!change) writeFileSync(join(m.skill, 'template/scripts/.DS_Store'), 'Finder');
+    assert.equal(m.run(m.target, 'mine').status, 0);
+    change?.(m);
+    // Run the template comparison without NODE_TEST_CONTEXT, which would make the inner run report to this one and exit 0 whatever it found.
+    const {NODE_TEST_CONTEXT, ...env} = process.env;
+    const result = spawnSync(process.execPath, ['--test', 'scripts/template.test.mjs'], {cwd: m.target, env, encoding: 'utf8'});
+    assert.equal(result.status, status, result.stdout);
+    m.cleanup();
+  });
+}
+
+test('pnpm fonts sends Google Fonts each character once, in code order, never in the order of the text', () => {
+  const m = setUp();
+  m.addVoice('mine', 'audio', '这是我的声音。\n');
+  assert.equal(m.run(m.target, 'mine').status, 0);
+  // Characters no other source holds, out of code order (U+9F9F, U+5154, U+8D5B): the video draws them, so each must be sent.
+  const text = '龟兔赛';
+  writeFileSync(join(m.target, 'src/data/note.ts'), `export const NOTE = '${text}';\n`);
+  // Replace fetch: write down each request's text parameter and answer with a tiny font.
+  const sentFile = join(m.root, 'sent.txt');
+  const stub = join(m.root, 'fetch-stub.mjs');
+  writeFileSync(
+    stub,
+    `import fs from 'node:fs';
+globalThis.fetch = async (url) => {
+  const u = new URL(url);
+  if (u.hostname !== 'fonts.googleapis.com') return {arrayBuffer: async () => new ArrayBuffer(4)};
+  fs.appendFileSync(${JSON.stringify(sentFile)}, JSON.stringify(u.searchParams.get('text')) + '\\n');
+  return {text: async () => 'src: url(https://fonts.gstatic.com/s/x.woff2)'};
+};
+`,
+  );
+  const result = spawnSync(process.execPath, ['--import', stub, 'scripts/fonts.mjs'], {cwd: m.target, encoding: 'utf8'});
+  assert.equal(result.status, 0, result.stderr);
+  const sent = readFileSync(sentFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+  assert.equal(sent.length, 10); // Expect one request per face and weight: three each of Noto Sans SC, IBM Plex Sans and IBM Plex Mono, one of Noto Serif SC.
+  for (const chars of sent) {
+    assert.deepEqual([...text].filter((c) => !chars.includes(c)), [], chars);
+    assert.ok([...chars].every((c, i, all) => i === 0 || all[i - 1].codePointAt(0) < c.codePointAt(0)), chars);
+  }
   m.cleanup();
 });
