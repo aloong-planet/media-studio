@@ -1,8 +1,9 @@
-// Downloads only the glyphs this video uses, so rendering needs no network and no system fonts.
-// Only the de-duplicated set of characters leaves the machine, never the script's text.
+// Download the glyphs this video uses, and printable ASCII, so rendering needs no network and no system fonts.
+// Send nothing but the characters, each once and in code order: never the script's text.
 // With --check, downloads nothing and fails if the text now uses a character the fonts were not cut for.
 import fs from 'node:fs';
 import path from 'node:path';
+import {fontCharacters} from './lib/charset.mjs';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const FACES = [
@@ -19,8 +20,7 @@ const walk = (dir) => fs.readdirSync(dir, {withFileTypes: true}).flatMap((e) => 
 });
 const sources = walk('src').filter((f) => /\.(ts|tsx|json)$/.test(f));
 const decoded = sources.map((f) => fs.readFileSync(f, 'utf8')).join('');
-const chars = new Set([...decoded].filter((c) => c.codePointAt(0) >= 0x20 && c !== ' '));
-for (let c = 0x20; c < 0x7f; c++) chars.add(String.fromCharCode(c));
+const chars = [...fontCharacters(decoded)];
 
 if (process.argv.includes('--check')) {
   const cut = new Set(fs.existsSync(CHARSET) ? [...fs.readFileSync(CHARSET, 'utf8')] : []);
@@ -29,7 +29,7 @@ if (process.argv.includes('--check')) {
     console.error(`Fonts lack ${missing.length} characters, run pnpm fonts: ${missing.slice(0, 40).join('')}`);
     process.exit(1);
   }
-  console.log(`fonts cover all ${chars.size} characters`);
+  console.log(`fonts cover all ${chars.length} characters`);
   process.exit(0);
 }
 
@@ -44,7 +44,7 @@ const fetchRetrying = async (url, options, tries = 4) => {
 };
 
 const text = encodeURIComponent([...chars].join(''));
-console.log(`${chars.size} unique characters`);
+console.log(`${chars.length} unique characters`);
 fs.mkdirSync('public/fonts', {recursive: true});
 for (const [family, slug, weights] of FACES) {
   for (const w of weights) {
