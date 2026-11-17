@@ -83,7 +83,7 @@ Downloads try `huggingface.co` first, then `hf-mirror.com` if that fails or writ
 
 ## What leaves your machine
 
-Narration and transcription run locally, so the script is not sent to an online service. `pnpm fonts` sends Google Fonts only the set of characters used. For `article-figures` that set is the printable ASCII characters and any other character English uses that the project's source files contain, each once and in code order, never the figures' text. `npx skills` sends anonymous usage data, including the repository and skill names; set `DISABLE_TELEMETRY=1` to turn that off.
+Narration and transcription run locally, so the script is not sent to an online service. `pnpm fonts` sends Google Fonts only the set of characters used. For `article-figures` that set is the printable ASCII characters and any other character English uses that the project's source files contain, each once and in code order, never the figures' text. For `video-tutorial` it is the printable ASCII characters and any other character from U+0020 up that the project's source files contain, each once and in code order, never the narration. `npx skills` sends anonymous usage data, including the repository and skill names; set `DISABLE_TELEMETRY=1` to turn that off.
 
 ## License
 
