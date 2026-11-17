@@ -1,4 +1,6 @@
-// Run from this folder: node --test new-project.test.mjs. The template and node are real; pnpm is a stub, so nothing is installed.
+// Run from this folder: node --test video-tutorial.test.mjs. The template and node are real; pnpm is a stub, so nothing is installed.
+// Not tested: the test pattern in the command pnpm check runs, which Node 22 and 24 need where Node 26 also takes a
+// folder. Check it by running that command on Node 22 and 24 in a project made by new-project.sh; both runs must pass.
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from 'node:fs';
