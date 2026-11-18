@@ -106,7 +106,8 @@ export const ChapterCard: React.FC<{seg: Seg; frame: number}> = ({seg, frame}) =
 export const TitleCard: React.FC<{seg: Seg; frame: number}> = ({seg, frame}) => {
   if (seg.kind !== 'title') return null;
   const local = frame - seg.start;
-  const op = interpolate(local, [6, 24, seg.dur - 12, seg.dur - 2], [0, 1, 1, 0], clamp);
+  // The title is the first frame: it must be fully shown from frame 0 and may only fade out.
+  const op = interpolate(local, [seg.dur - 12, seg.dur - 2], [1, 0], clamp);
   return (
     <div style={{...FULL, background: C.bg, opacity: scrimOpacity(seg, local), display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
       <div style={{opacity: op, textAlign: 'center'}}>

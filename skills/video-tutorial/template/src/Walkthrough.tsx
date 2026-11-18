@@ -11,7 +11,8 @@ export const Walkthrough: React.FC = () => {
   const frame = useCurrentFrame();
   const idx = segIndexAt(frame);
   const seg = SEGS[idx];
-  const fade = interpolate(frame, [0, 14, TOTAL_FRAMES - 18, TOTAL_FRAMES - 1], [0, 1, 1, 0], {
+  // Must not fade in: the first frame has to show the finished title.
+  const fade = interpolate(frame, [TOTAL_FRAMES - 18, TOTAL_FRAMES - 1], [1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });

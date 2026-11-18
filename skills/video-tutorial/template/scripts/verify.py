@@ -1,4 +1,4 @@
-"""Checks the finished mp4: format, loudness, daytime look, and that subtitles are on time. Run with pnpm verify."""
+"""Checks the finished mp4: format, loudness, daytime look, first frame, and that subtitles are on time. Run with pnpm verify."""
 import importlib.util
 import json
 import pathlib
@@ -80,6 +80,31 @@ def check_daytime() -> None:
     report(darkest >= MIN_LUMINANCE, f"background luminance at least {darkest:.2f} across {len(TIMELINE['segments'])} segments, minimum {MIN_LUMINANCE}")
 
 
+def frame_at(seconds: float) -> np.ndarray:
+    raw = subprocess.run(
+        ["ffmpeg", "-v", "error", "-ss", f"{seconds:.3f}", "-i", str(VIDEO), "-frames:v", "1", "-f", "rawvideo", "-pix_fmt", "gray", "-"],
+        capture_output=True, check=True,
+    ).stdout
+    return np.frombuffer(raw, dtype=np.uint8).reshape(1080, 1920).astype(float)
+
+
+# The first frame must already be the finished title card.
+# Compare only the stage: the progress bar and the subtitles below it can change within the first second.
+MIN_FIRST_FRAME_SPREAD = 8.0  # grey-level standard deviation of the stage: a blank first frame measured 0.0, a title card 30.9
+MAX_FIRST_FRAME_CHANGE = 1.0  # mean grey-level difference from one second in: a 14-frame fade-in measured 5.82, a still title card 0.02
+
+
+def check_first_frame() -> None:
+    if any(f.startswith("size ") for f in FAILURES):
+        report(False, "first frame not checked: the frame size is wrong")
+        return
+    first, settled = frame_at(0)[124:900], frame_at(1.0)[124:900]
+    spread = float(first.std())
+    change = float(np.abs(first - settled).mean())
+    report(spread >= MIN_FIRST_FRAME_SPREAD, f"first frame shows content, spread {spread:.1f}, minimum {MIN_FIRST_FRAME_SPREAD}")
+    report(change <= MAX_FIRST_FRAME_CHANGE, f"first frame is the finished title, {change:.2f} from one second in, limit {MAX_FIRST_FRAME_CHANGE}")
+
+
 def check_sync() -> None:
     wav = ROOT / ".cache/qwen3/final.wav"
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(VIDEO), "-ar", "16000", "-ac", "1", str(wav)], check=True)
@@ -119,6 +144,7 @@ def main() -> None:
     check_format()
     check_loudness()
     check_daytime()
+    check_first_frame()
     check_one_subtitle_layer()
     check_sync()
     print(f"FAILED: {len(FAILURES)}" if FAILURES else "ALL PASSED")
