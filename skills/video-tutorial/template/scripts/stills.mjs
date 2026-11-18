@@ -1,4 +1,4 @@
-// The preview before any mp4: both covers and one still per segment, with the layout rules measured in each.
+// Run before any mp4: renders both covers, the first frame and one still per segment, and measures the layout rules in each.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,6 +18,8 @@ const FROM_END = 20;
 const shots = [
   {id: 'Cover34', frame: 0, output: 'out/cover-3x4.png'},
   {id: 'Cover43', frame: 0, output: 'out/cover-4x3.png'},
+  // Look at this still: the first frame must already be the finished title.
+  {id: 'Walkthrough', frame: 0, output: 'out/stills/first-frame.png'},
   ...segments.map((s) => ({id: 'Walkthrough', frame: s.start + Math.max(0, s.dur - FROM_END), output: `out/stills/${s.id}.png`})),
 ];
 
