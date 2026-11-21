@@ -63,18 +63,19 @@ These are judged by looking at the rendered covers, by the skill before it sends
 
 - video-tutorial::REQ-005/AC-01: Card: rounded corners and a soft shadow, with no border and no strip or line along its top. Its header is a coloured dot, a small grey label and a bold heading under them. A card holds other blocks.
 - video-tutorial::REQ-005/AC-02: Number tile: one figure per tile, on the light fill of the tile's hue. The figure is large and drawn in a two-colour gradient of its hue; its unit (亿, 次, 万, %) is at 58 % of the figure's size; an approximate figure is written with ≈ before it, at 70 % of the figure's size, and never with 约. A grey label under the figure says what it counts.
-- video-tutorial::REQ-005/AC-03: Before/after: the name of what changed in its colour, then a 以前 row and a 现在 row. The 以前 tag has a grey fill and grey text, and its text is struck through. The 现在 tag has the block's colour. Under them, a headline result at 36 px, smaller than a number tile's 52 px figure, and the line explaining it in the ink colour, not in grey.
+- video-tutorial::REQ-005/AC-03: Before/after: the name of what changed in its colour; when the block says what that thing does, one bold line in the ink colour under the name says it. Then a 以前 row and a 现在 row. The 以前 tag has a grey fill and grey text, and the old way written after it is grey and struck through. The 现在 tag has the block's colour. Under them, a headline result at 36 px, smaller than a number tile's 52 px figure, and the line explaining it in the ink colour, not in grey.
 - video-tutorial::REQ-005/AC-04: Table read down its columns: one row per case, named in the first column; one column per part, headed by the part's coloured dot and name. A cell the case reaches has the light fill of its column's hue, or of the hue the cell is given, and its text in that hue's ink; a cell the case does not reach is grey and empty. A cell may have the deeper fill of its hue, to show a bigger value. All cells of a table are the same height.
 
 ## Quality Requirements
 
 ### video-tutorial::QR-001 Measured on every cover
 
-Applies to: every cover `pnpm stills` renders. A failed measurement makes `pnpm stills` exit with a non-zero code and names the text or the block.
+Applies to: every cover `pnpm stills` renders. A failed measurement makes `pnpm stills` exit with a non-zero code and names the text or the block under every cover it fails on.
 
-- video-tutorial::QR-001/AC-01: Text drawn in a gradient has a contrast of at least 4.5 at both ends of the gradient, each end against the opaque colour behind the text.
+- video-tutorial::QR-001/AC-01: Text drawn in a gradient has a contrast of at least 4.5 at both ends of the gradient, each end against the opaque colour behind the text. A gradient whose colours cannot be read fails.
 - video-tutorial::QR-001/AC-02: Every text and every block of the main visual lies inside the area of video-tutorial::REQ-002.
 - video-tutorial::QR-001/AC-03: On the Douyin cover, no text and no block lies in the top 220 px or the bottom 380 px, which the Douyin app covers.
+- video-tutorial::QR-001/AC-04: The text of every table cell stays inside its cell.
 
 ## Constraints
 
