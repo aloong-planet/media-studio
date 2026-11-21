@@ -19,8 +19,6 @@ export type Light = {
   isCurrent: (edgeId: string) => boolean;
 };
 
-export const NO_LIGHT: Light = {lits: {}, play: 0, frame: 0, isCurrent: () => false};
-
 const TITLE: React.CSSProperties = {fontFamily: SANS, fontWeight: 600, fontSize: 13.5};
 const SMALL: React.CSSProperties = {fontFamily: SANS, fontSize: 12};
 const MONO_SMALL: React.CSSProperties = {fontFamily: MONO, fontSize: 11.5};

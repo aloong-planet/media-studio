@@ -29,6 +29,19 @@ export type Tone = keyof typeof TONES;
 // One thing that recurs across boxes, such as a topic in a table and on the cards that handle it.
 export const ACCENTS = {blue: '#1857C2', magenta: '#B81E72', olive: '#5C5F00'} as const;
 
+// The covers: the soft shadow under their cards and tiles, and the two ends of each hue's gradient for figures and results.
+// Every hue but grey has one, and both of its ends keep 4.5 contrast on the hue's fill and on the panel.
+export const SHADOW = 'rgba(19, 27, 36, 0.07)';
+export const GRADIENTS = {
+  blue: [HUES.blue.ink, TONES.violet],
+  teal: [HUES.teal.ink, TONES.teal],
+  green: [HUES.green.ink, HUES.teal.ink],
+  amber: [HUES.amber.ink, '#A65200'], // TONES.orange is 4.4 on the amber fill
+  violet: [HUES.violet.ink, TONES.violet],
+  pink: [HUES.pink.ink, ACCENTS.magenta],
+} as const satisfies Record<Exclude<Hue, 'gray'>, readonly [string, string]>;
+export type GradientHue = keyof typeof GRADIENTS;
+
 export const SANS = '"IBM Plex Sans","Noto Sans SC","PingFang SC",sans-serif';
 export const MONO = '"IBM Plex Mono","Noto Sans SC","PingFang SC",monospace';
 export const DISPLAY = '"Noto Serif SC","Songti SC",serif';

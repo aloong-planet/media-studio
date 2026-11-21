@@ -1,6 +1,7 @@
 {
   "name": "video-tutorial",
   "private": true,
+  "type": "module",
   "scripts": {
     "fonts": "node scripts/fonts.mjs",
     "narrate": "$HOME/.venv/mlx-tts/bin/python -I scripts/narrate.py",
