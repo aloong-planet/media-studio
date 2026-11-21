@@ -2,6 +2,7 @@
 // Text below 0.9 opacity is skipped for contrast: it is the part of the diagram dimmed while a step is lit.
 import React, {useEffect} from 'react';
 import {continueRender, delayRender, getInputProps, useCurrentFrame, useVideoConfig} from 'remotion';
+import {fontsLoaded} from '../fonts';
 import {pathSegments} from '../map/path';
 import {englishProblem} from './text';
 
@@ -215,7 +216,7 @@ const Measuring: React.FC<{isStatic: boolean}> = ({isStatic}) => {
   const tag = useVideoConfig().id;
   useEffect(() => {
     const handle = delayRender('measure');
-    document.fonts.ready.then(() => {
+    fontsLoaded.then(() => {
       const root = document.getElementById('frame')!;
       const problems: string[] = [];
       checkEnglish(root, problems);
