@@ -3,31 +3,16 @@
 import React, {useEffect} from 'react';
 import {continueRender, delayRender, getInputProps, useCurrentFrame} from 'remotion';
 import {DIAGRAM} from '../data/diagram';
+import {fontsLoaded} from '../fonts';
 import {pathSegments} from '../map/path';
+import {Cover, FRAMES, Placed, placementProblems} from '../ui/platforms';
+import {Rgb, blend, contrast, gradientStops, luminance, parse} from './colour';
 
 const MIN_CONTRAST = 4.5;
 const MIN_BADGE_GAP = 2; // map units of clear space around a step number
 const MIN_ARROW_RATIO = 2.5;
 const MAX_BADGE_RATIO = 2;
 
-type Rgb = [number, number, number];
-const parse = (c: string): {rgb: Rgb; a: number} => {
-  const m = (c.match(/[\d.]+/g) ?? ['0', '0', '0', '0']).map(Number);
-  return {rgb: [m[0], m[1], m[2]], a: m.length > 3 ? m[3] : 1};
-};
-const luminance = (rgb: Rgb) => {
-  const [r, g, b] = rgb.map((v) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-const contrast = (p: Rgb, q: Rgb) => {
-  const [hi, lo] = [luminance(p), luminance(q)].sort((a, b) => b - a);
-  return (hi + 0.05) / (lo + 0.05);
-};
-// What the eye gets: text drawn at some opacity over its background.
-const blend = (fg: Rgb, bg: Rgb, a: number): Rgb => [fg[0] * a + bg[0] * (1 - a), fg[1] * a + bg[1] * (1 - a), fg[2] * a + bg[2] * (1 - a)];
 const opacityOf = (e: Element, stop: Element) => {
   let op = 1;
   for (let n: Element | null = e; n && n !== stop; n = n.parentElement) op *= +getComputedStyle(n).opacity;
@@ -75,14 +60,28 @@ const opaqueBehind = (e: Element): Rgb => {
 
 const DIMMED_IN_STILL = 'dimmed text in a static frame';
 
+// Every element outside the diagram with text of its own, and the box its text is drawn in.
+const textsOf = (root: HTMLElement) =>
+  [...root.querySelectorAll('*')]
+    .filter((e) => !e.closest('svg') && [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim()))
+    .map((e) => {
+      const range = document.createRange();
+      range.selectNodeContents(e);
+      return {el: e, text: (e.textContent ?? '').trim().slice(0, 18), rect: range.getBoundingClientRect()};
+    });
+
+// Text whose colour is a gradient clipped to its glyphs is drawn by the element with that background, itself or an ancestor.
+const gradientPainter = (e: Element, root: HTMLElement): Element | null => {
+  for (let n: Element | null = e; n && n !== root.parentElement; n = n.parentElement) {
+    const s = getComputedStyle(n);
+    if (s.backgroundClip === 'text' || s.webkitBackgroundClip === 'text') return n;
+  }
+  return null;
+};
+
 const checkHtml = (root: HTMLElement, problems: string[], isStatic: boolean) => {
   const bounds = root.getBoundingClientRect();
-  for (const e of root.querySelectorAll('*')) {
-    if (e.closest('svg') || ![...e.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim())) continue;
-    const text = (e.textContent ?? '').trim().slice(0, 18);
-    const range = document.createRange();
-    range.selectNodeContents(e);
-    const r = range.getBoundingClientRect();
+  for (const {el: e, text, rect: r} of textsOf(root)) {
     if (r.left < bounds.left + 20 || r.right > bounds.right - 20 || r.top < bounds.top || r.bottom > bounds.bottom) problems.push(`text leaves the frame: ${text}`);
     const opacity = opacityOf(e, root);
     if (opacity < 0.9) {
@@ -90,7 +89,18 @@ const checkHtml = (root: HTMLElement, problems: string[], isStatic: boolean) => 
       continue;
     }
     const behind = opaqueBehind(e);
-    const c = contrast(blend(parse(getComputedStyle(e).color).rgb, behind, opacity), behind);
+    const colour = parse(getComputedStyle(e).color);
+    const painter = colour.a === 0 ? gradientPainter(e, root) : null;
+    if (painter) {
+      const stops = gradientStops(getComputedStyle(painter).backgroundImage);
+      if (stops.length < 2) problems.push(`gradient whose colours cannot be read: ${text}`);
+      for (const stop of stops) {
+        const c = contrast(blend(stop, behind, opacity), behind);
+        if (c < MIN_CONTRAST) problems.push(`contrast ${c.toFixed(2)} in a gradient: ${text}`);
+      }
+      continue;
+    }
+    const c = contrast(blend(colour.rgb, behind, opacity), behind);
     if (c < MIN_CONTRAST) problems.push(`contrast ${c.toFixed(2)}: ${text}`);
   }
   for (const e of root.querySelectorAll('[data-fit]')) {
@@ -130,7 +140,7 @@ const checkSvg = (svg: SVGSVGElement, root: HTMLElement, problems: string[], isS
   const bands = [...svg.querySelectorAll<SVGRectElement>('[data-box="band"] > rect')].map((r) => ({rect: rectOf(r), fill: parse(getComputedStyle(r).fill).rgb}));
   const swatches = [...svg.querySelectorAll<SVGRectElement>('[data-legend] rect')].map(rectOf);
 
-  // The covers show exactly the diagram's view, so anything outside it is cut off there.
+  // The diagram's view must hold all of it: the camera's widest shot is built around the view.
   const [vx, vy, vw, vh] = DIAGRAM.view;
   const SLACK = 0.01; // the transform above leaves rounding errors such as 929.9999999999999
   const outside = (x: number, y: number) => x < vx - SLACK || y < vy - SLACK || x > vx + vw + SLACK || y > vy + vh + SLACK;
@@ -199,23 +209,45 @@ const checkSvg = (svg: SVGSVGElement, root: HTMLElement, problems: string[], isS
   });
 };
 
-const Measuring: React.FC<{tag: string}> = ({tag}) => {
+// Where a cover's texts and blocks lie, in the drawing's pixels: inside the main visual's area, clear of the app's bars.
+const checkCover = (root: HTMLElement, cover: Cover, problems: string[]) => {
+  const area = root.querySelector('[data-area]');
+  if (!area) {
+    problems.push('no main visual area: data-area is missing');
+    return;
+  }
+  const box = root.getBoundingClientRect();
+  const k = FRAMES[cover.ratio].width / box.width;
+  const drawn = (r: DOMRect) => ({x: (r.left - box.left) * k, y: (r.top - box.top) * k, w: r.width * k, h: r.height * k});
+  const items: Placed[] = [
+    ...textsOf(root).map((t) => ({what: t.text, rect: drawn(t.rect), inArea: area.contains(t.el)})),
+    ...[...root.querySelectorAll('[data-block]')].map((b) => ({
+      what: `${b.getAttribute('data-block')} 「${(b.textContent ?? '').trim().slice(0, 18)}」`,
+      rect: drawn(b.getBoundingClientRect()),
+      inArea: area.contains(b),
+    })),
+  ];
+  problems.push(...placementProblems(cover, items));
+};
+
+const Measuring: React.FC<{tag: string; cover?: Cover}> = ({tag, cover}) => {
   const frame = useCurrentFrame();
   useEffect(() => {
     const handle = delayRender('measure');
-    document.fonts.ready.then(() => {
+    fontsLoaded.then(() => {
       const root = document.getElementById('frame')!;
       const problems: string[] = [];
       const isStatic = tag.startsWith('cover');
       checkHtml(root, problems, isStatic);
       const svg = root.querySelector<SVGSVGElement>('svg#map');
       if (svg) checkSvg(svg, root, problems, isStatic);
+      if (cover) checkCover(root, cover, problems);
       const luminances = [root, svg?.parentElement].filter(Boolean).map((e) => luminance(opaqueBehind(e!)));
       console.log(`MEASURE ${JSON.stringify({tag, frame, problems: [...new Set(problems)], luminance: Math.min(...luminances)})}`);
       continueRender(handle);
     });
-  }, [frame, tag]);
+  }, [frame, tag, cover]);
   return null;
 };
 
-export const Measure: React.FC<{tag: string}> = ({tag}) => (getInputProps().measure ? <Measuring tag={tag} /> : null);
+export const Measure: React.FC<{tag: string; cover?: Cover}> = ({tag, cover}) => (getInputProps().measure ? <Measuring tag={tag} cover={cover} /> : null);

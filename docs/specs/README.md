@@ -7,3 +7,4 @@ A requirement is identified as `<spec-slug>::<local id>`, for example `article-f
 | Spec | In one line |
 |---|---|
 | [Article figures](article-figures.md) | Draws an article's diagrams, animated diagrams and cover in English, shows a preview, and copies the approved files into the article. |
+| [Video tutorial](video-tutorial.md) | Renders a tutorial video's covers, one set per publishing platform, each introducing the video's main point. |

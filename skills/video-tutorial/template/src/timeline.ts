@@ -25,7 +25,7 @@ export type Seg = {
   stepTotal?: number;
 };
 export type Chapter = {
-  no?: number; // numbered chapters are the ones with a card, a wrap and a row in the outro and on the covers
+  no?: number; // numbered chapters are the ones with a card, a wrap and a row in the outro
   tab?: string;
   label?: string;
   sub?: string;
@@ -39,7 +39,7 @@ export type Meta = {
   title: string;
   subtitle: string;
   note?: string;
-  titleScale?: number; // below 1 when the title does not fit one line
+  titleScale?: number; // the title card's: below 1 when the title does not fit one line there; each cover fits its own
   unit: string; // what a numbered chapter is: 事件, 场景
   outro: {heading: string; sources: string[]};
 };
