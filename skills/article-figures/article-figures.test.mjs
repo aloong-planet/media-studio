@@ -4,12 +4,13 @@
 //
 // Not tested, here or in template/scripts, and how each is checked instead:
 // - What runs in a rendered page needs a browser render, which no test starts: the diagram-design measurements and the
-//   not-English check in src/check/Measure.tsx (QR-001/AC-01, CON-001, REQ-003/AC-04, AC-06), the dimming, the dot and
-//   the outlines drawn past the view's edge by src/map (REQ-003/AC-03), and scripts/render.mjs, which writes
-//   out/manifest.json with the figures it drew only when nothing failed (QR-001/AC-02) and prints, as
-//   template/scripts/output.test.mjs tests them, each file's lines and its problems (US-002/AC-01). They are checked by
-//   rendering the sample and samples broken on purpose, and by reading the pixels of an outline on the view's edge. A
-//   test can be added once the suite can run a render.
+//   not-English check in src/check/Measure.tsx (QR-001/AC-01, CON-001, REQ-003/AC-04, AC-06) and its wait for every
+//   face src/fonts.ts loads, the dimming, the dot and the outlines drawn past the view's edge by src/map (REQ-003/AC-03),
+//   and scripts/render.mjs, which writes out/manifest.json with the figures it drew only when nothing failed
+//   (QR-001/AC-02) and prints, as template/scripts/output.test.mjs tests them, each file's lines and its problems
+//   (US-002/AC-01). They are checked by rendering the sample and samples broken on purpose, by reading the pixels of an
+//   outline on the view's edge, and, for the wait, by rendering with IBM Plex Sans 600 held back a title that leaves the
+//   frame only in that face. A test can be added once the suite can run a render.
 // - Root.tsx handing a figure's fps, stepSeconds and holdSeconds to gifTiming (US-003/AC-01): checked by rendering a GIF
 //   that sets them and reading its pass length.
 // - fonts.mjs --check, which pnpm check runs in a project: checked by pnpm check in a project made from the template.
