@@ -1,0 +1,335 @@
+<!doctype html>
+<!-- prototype-cover.md -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>video-tutorial cover</title>
+<script src="../manifest.js"></script>
+<script src="../app-identity.js"></script>
+<style>
+  /* Tokens copied from the video template's theme (daytime only), plus the cover's shadow. */
+  :root {
+    --bg: #EFF2F5; --panel: #FBFCFD; --band: #E3E8EE; --ink: #131B24; --muted: #535F6C; --line: #C3CCD5; --edge: #6E7A87; --on-hue: #FFFFFF;
+    --shadow: rgba(19, 27, 36, 0.07);
+    --gray-fill: #F1F3F5;
+    --green-fill: #EAF7EE; --green-line: #74BE8F; --green-ink: #17653A; --green-lit: #C6EBD2;
+    --teal-fill: #E6F6F6; --teal-line: #57B5BD; --teal-ink: #005F6B; --teal-tone: #007A87;
+    --amber-fill: #FEF3E2; --amber-line: #DFA355; --amber-ink: #8A4500; --orange: #B35900; --amber-end: #A65200;
+    --violet-fill: #F3EEFD; --violet-line: #A78FE3; --violet-ink: #5330A8; --violet-tone: #6A3FC9;
+    --blue-fill: #EDF4FE; --blue-line: #7FA8E6; --blue-ink: #174A97;
+    --pink-fill: #FDEEF4; --pink-ink: #9C1F54;
+    --sans: "IBM Plex Sans", "Noto Sans SC", "PingFang SC", sans-serif;
+    --mono: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", monospace;
+    --display: "Noto Serif SC", "Songti SC", serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  .sheet { background: #D9DEE4; font-family: var(--sans); color: var(--ink); padding: 32px 32px 120px; display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start; min-height: 100vh; }
+  .frame-label { font: 600 14px var(--sans); color: var(--muted); margin-bottom: 8px; }
+  .holder { overflow: hidden; box-shadow: 0 2px 12px rgba(19, 27, 36, 0.18); }
+
+  /* What the template fixes: the canvas, the title, the subtitle. */
+  .cover { position: relative; background: var(--bg); transform-origin: 0 0; font-family: var(--sans); color: var(--ink); }
+  .cover h1 { position: absolute; left: 48px; margin: 0; font-weight: 600; line-height: 1.2; font-family: var(--display); white-space: nowrap; }
+  .cover .sub { position: absolute; left: 50px; line-height: 1.3; color: var(--muted); white-space: nowrap; }
+
+  /* Template only: the area each video fills, and Douyin's bars. */
+  .area { position: absolute; border: 3px dashed var(--edge); border-radius: 16px; display: grid; place-items: center; text-align: center; font: 600 30px/1.5 var(--sans); color: var(--muted); padding: 40px; }
+  .area small { display: block; font-weight: 400; font-size: 24px; }
+  .bars { position: absolute; left: 0; right: 0; background: repeating-linear-gradient(45deg, rgba(19, 27, 36, 0.06) 0 14px, rgba(19, 27, 36, 0.12) 14px 28px); display: grid; place-items: center; font: 600 26px var(--sans); color: var(--muted); }
+
+  /* Blocks the template offers: a card with a dot, a small label and a bold heading. */
+  .card { position: absolute; background: var(--panel); border-radius: 16px; box-shadow: 0 1px 2px var(--shadow), 0 8px 24px var(--shadow); padding: 26px 30px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; font: 600 20px var(--sans); color: var(--muted); }
+  .eyebrow::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--dot); }
+  .card h2 { margin: 10px 0 0; font: 600 30px/1.3 var(--sans); }
+  .d-green { --dot: var(--green-line); }
+  .d-violet { --dot: var(--violet-line); }
+  .d-blue { --dot: var(--blue-line); }
+
+  /* Gradient numbers and words: --g1 to --g2; both ends keep 4.5 on the tile's fill and on the panel. */
+  .num { font-weight: 700; letter-spacing: -0.5px; white-space: nowrap; background: linear-gradient(100deg, var(--g1), var(--g2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .g-blue { --g1: var(--blue-ink); --g2: var(--violet-tone); --fill: var(--blue-fill); }
+  .g-teal { --g1: var(--teal-ink); --g2: var(--teal-tone); --fill: var(--teal-fill); }
+  .g-green { --g1: var(--green-ink); --g2: var(--teal-ink); --fill: var(--green-fill); }
+  .g-amber { --g1: var(--amber-ink); --g2: var(--amber-end); --fill: var(--amber-fill); }
+  .g-violet { --g1: var(--violet-ink); --g2: var(--violet-tone); --fill: var(--violet-fill); }
+
+  /* Number tiles: one card per figure on its hue's light fill; units at 58 %, ≈ at 70 %. */
+  .stats { position: absolute; display: grid; gap: 16px; }
+  .stat { border-radius: 16px; padding: 24px 26px 22px; background: var(--fill); box-shadow: 0 1px 2px var(--shadow), 0 8px 24px var(--shadow); }
+  .stat b { display: inline-block; font-size: 52px; line-height: 1.1; }
+  .stat b .approx { font-style: normal; font-size: 0.7em; margin-right: 6px; }
+  .stat b small { font-size: 0.58em; margin-left: 4px; }
+  .stat span { display: block; margin-top: 8px; font: 20px var(--sans); color: var(--muted); white-space: nowrap; }
+
+  /* Before and after: grey 以前, the old text struck through; 现在 in the block's colour; the result below. */
+  .tools { display: grid; gap: 20px; margin-top: 20px; }
+  .tool { border-radius: 12px; padding: 20px 22px; }
+  .tool.teal { background: var(--teal-fill); --accent: var(--teal-ink); --chip: var(--teal-line); }
+  .tool.amber { background: var(--amber-fill); --accent: var(--amber-end); --chip: var(--amber-line); }
+  .tool .name { font: 600 26px var(--mono); color: var(--accent); }
+  .tool .does { margin-top: 4px; font: 600 22px var(--sans); color: var(--ink); }
+  .row { display: flex; align-items: center; gap: 12px; margin-top: 14px; font: 20px/1.4 var(--sans); color: var(--muted); white-space: nowrap; }
+  .row .tag { flex: none; font: 600 17px var(--sans); border-radius: 999px; padding: 3px 12px; }
+  .row.before .tag { background: var(--band); color: var(--muted); }
+  .row.before .text { text-decoration: line-through; text-decoration-color: var(--line); }
+  .row.after .tag { background: var(--accent); color: var(--on-hue); }
+  .row.after .text { color: var(--ink); }
+  .win { display: flex; align-items: baseline; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--chip); white-space: nowrap; }
+  .win b { font-size: 36px; line-height: 1.1; }
+  .win span { font: 20px var(--sans); color: var(--ink); }
+  .people { display: flex; align-items: center; gap: 14px; margin-top: 18px; font: 22px var(--sans); color: var(--muted); white-space: nowrap; }
+  .people b { color: var(--ink); font-weight: 600; }
+  .people i { font-style: normal; background: var(--violet-fill); color: var(--violet-ink); border-radius: 999px; padding: 4px 14px; font-weight: 600; }
+
+  /* A table read down its columns: one row per case, one column per part of the system. */
+  .matrix { display: grid; column-gap: 12px; margin-top: 22px; align-items: center; }
+  .matrix .head { display: flex; align-items: center; gap: 8px; justify-content: center; font: 600 19px var(--sans); color: var(--muted); padding-bottom: 6px; }
+  .matrix .head::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--dot); }
+  .matrix .name b { display: block; font: 600 22px/1.3 var(--sans); color: var(--ink); white-space: nowrap; }
+  .matrix .name span { display: block; margin-top: 2px; font: 17px/1.35 var(--sans); color: var(--muted); }
+  .matrix .cell { border-radius: 12px; display: grid; place-items: center; font: 600 21px var(--sans); white-space: nowrap; }
+  .matrix .cell.on { background: var(--fill); color: var(--ink-hue); }
+  .matrix .cell.off { background: var(--gray-fill); }
+  .h-teal { --dot: var(--teal-line); --fill: var(--teal-fill); --ink-hue: var(--teal-ink); }
+  .h-amber { --dot: var(--amber-line); --fill: var(--amber-fill); --ink-hue: var(--amber-ink); }
+  .h-green { --dot: var(--green-line); --fill: var(--green-fill); --ink-hue: var(--green-ink); }
+  .h-violet { --dot: var(--violet-line); --fill: var(--violet-fill); --ink-hue: var(--violet-ink); }
+</style>
+</head>
+<body>
+<div class="sheet" id="sheet"></div>
+
+<div data-demo-harness>
+  <span class="dh-tag">Demo ·</span>
+  <div class="dh-group">
+    <span class="dh-title">Example video</span>
+    <div class="dh-opts" id="pick">
+      <button type="button" class="dh-opt" data-pick="compact" aria-pressed="true">compact-timing</button>
+      <button type="button" class="dh-opt" data-pick="super" aria-pressed="false">super-agent</button>
+      <button type="button" class="dh-opt" data-pick="frame" aria-pressed="false">Template parts only</button>
+    </div>
+  </div>
+  <p class="dh-note">Each video draws its own main visual from its own data; the product has no such switch.</p>
+</div>
+<script src="../demo-harness.js"></script>
+
+<script>
+  // The template's frame per ratio: canvas, title (the largest size whose line still clears the subtitle), subtitle,
+  // and the area the video draws in. Douyin's app covers about the top 220 and bottom 380 pixels.
+  const FRAMES = [
+    {key: 'p34', label: 'WeChat Channels 3:4 · Xiaohongshu 3:4 (1080×1440)', w: 1080, h: 1440,
+      title: {top: 56, size: 56}, sub: {top: 124, size: 36}, area: {left: 48, top: 214, width: 984, bottom: 1392}},
+    {key: 'l43', label: 'WeChat Channels 4:3 (1440×1080)', w: 1440, h: 1080,
+      title: {top: 44, size: 50}, sub: {top: 104, size: 36}, area: {left: 48, top: 176, width: 1344, bottom: 1032}},
+    {key: 'w169', label: 'YouTube 16:9 (drawn 1920×1080, saved 3840×2160)', w: 1920, h: 1080,
+      title: {top: 44, size: 66}, sub: {top: 124, size: 40}, area: {left: 48, top: 206, width: 1824, bottom: 1032}},
+    {key: 't916', label: 'Douyin 9:16 (1080×1920)', w: 1080, h: 1920, bars: [220, 380],
+      title: {top: 236, size: 56}, sub: {top: 304, size: 36}, area: {left: 48, top: 392, width: 984, bottom: 1540}},
+  ];
+
+  const html = (tag, cls, style, inner) => {
+    const d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (style) Object.assign(d.style, style);
+    if (inner != null) d.innerHTML = inner;
+    return d;
+  };
+  const px = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === 'number' ? v + 'px' : v]));
+  const statHtml = ([approx, n, unit, label, g]) =>
+    `<div class="stat g-${g}"><b class="num">${approx ? '<i class="approx">≈</i>' : ''}${n}${unit ? `<small>${unit}</small>` : ''}</b><span>${label}</span></div>`;
+  const stats = (list, box, cols) => html('div', 'stats', {...px(box), gridTemplateColumns: `repeat(${cols}, 1fr)`}, list.map(statHtml).join(''));
+
+  /* ---------- compact-timing: the confirmed cover, drawn in the template's frame ---------- */
+  const CT = {
+    title: '350 亿 token 实测 Claude Code 的压缩时机和自动压缩',
+    sub: '算出 20 万压缩门槛，再让会话自己压、压完接着干',
+    stats: [[true, '350', '亿', '30 天的 token', 'blue'], [false, '294', '次', '手动压缩', 'teal'], [false, '37', '%', '总体省下', 'green'], [true, '10', '万', '压完的第一个请求', 'amber']],
+    gaugeEyebrow: '30 天实测',
+    gauge: '压缩前的上下文越大，压完剩的请求越多，压了越省',
+    ruler: '压缩前上下文',
+    lanes: [['快收尾 · 交付', '压完剩 20–50 次请求', [-17, 10, 35, 48]], ['还有一阵', '压完剩 50–100 次请求', [3, 24, 45, 53]]],
+    ticks: ['10 万', '20 万', '40 万', '60 万'],
+    zoneLow: '不压', zoneHigh: '20 万及以上：自己压，压完被叫醒接着干',
+    pluginEyebrow: 'cc-session-pool 插件', plugin: '谁来查、谁来压：交给插件的两个工具',
+    tools: [
+      {cls: 'teal', g: 'teal', name: 'context_usage', does: '会话自己看上下文多大', before: '人看状态栏，再告诉它压不压', after: '到点自己查：不到 20 万直接交付', win: '不用问人', winNote: '压不压，会话自己定'},
+      {cls: 'amber', g: 'amber', name: 'compact_self', does: '会话自己压缩，压完接着干', before: '人敲 /compact，再说一句「继续」', after: '说完这一轮就压，压完自动叫醒', win: '1 秒内', winNote: '压完自己接上（实测）'},
+    ],
+    people: ['人只管', '装一次插件', '启动', '拍板'],
+    layouts: {
+      p34: {stats: [{left: 48, top: 214, width: 984}, 4], gauge: {box: {left: 48, top: 400, width: 984}, svg: 924, o: {lw: 186, laneH: 64, laneGap: 84, note: 17}}, plugin: {left: 48, top: 858, width: 984}, toolCols: 2},
+      l43: {stats: [{left: 48, top: 176, width: 820}, 2], gauge: {box: {left: 48, top: 507, width: 820, height: 472}, svg: 760, o: {lw: 178, laneH: 72, laneGap: 92, note: 15}}, plugin: {left: 892, top: 176, width: 500}, toolCols: 1},
+      w169: {stats: [{left: 48, top: 206, width: 1150}, 2], gauge: {box: {left: 48, top: 540, width: 1150, height: 430}, svg: 1090, o: {lw: 186, laneH: 72, laneGap: 92, note: 17}}, plugin: {left: 1222, top: 206, width: 650}, toolCols: 1},
+      t916: {stats: [{left: 48, top: 392, width: 984}, 4], gauge: {box: {left: 48, top: 578, width: 984}, svg: 924, o: {lw: 186, laneH: 64, laneGap: 84, note: 17}}, plugin: {left: 48, top: 1036, width: 984}, toolCols: 2},
+    },
+  };
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs, text) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const T = (attrs, text) => el('text', {'font-family': css('--sans'), ...attrs}, text);
+
+  // The ruler spans 10–20, 20–40, 40–60 and 60+ at 1:2:2:2; each lane puts one chip under each segment.
+  function gaugeSvg(width, o, id) {
+    const H = 140 + 2 * o.laneGap - 20, x0 = o.lw, x1 = width - 26, unit = (x1 - x0) / 7, y = 44, bh = 40;
+    const xs = [x0, x0 + unit, x0 + 3 * unit, x0 + 5 * unit, x1];
+    const svg = el('svg', {width, height: H, viewBox: `0 0 ${width} ${H}`});
+    const value = (v) => (v < 0 ? `亏 ${-v}%` : `省 ${v}%`);
+    const defs = el('defs', {});
+    const clip = el('clipPath', {id: 'bar' + id});
+    clip.append(el('rect', {x: x0, y, width: x1 - x0 + 24, height: bh, rx: bh / 2}));
+    defs.append(clip);
+    const grad = (gid, stops) => {
+      const g = el('linearGradient', {id: gid + id, x1: 0, y1: 0, x2: 1, y2: 0});
+      stops.forEach(([off, c]) => g.append(el('stop', {offset: off, 'stop-color': css(c)})));
+      defs.append(g);
+    };
+    grad('fillbar', [[0, '--green-fill'], [0.45, '--green-lit'], [1, '--green-line']]);
+    grad('val', [[0, '--green-ink'], [1, '--teal-ink']]);
+    svg.append(defs);
+    svg.append(T({x: x0 + 4, y: 28, 'font-size': 20, 'font-weight': 600, fill: css('--muted')}, CT.zoneLow));
+    svg.append(T({x: x1 + 20, y: 28, 'text-anchor': 'end', 'font-size': 20, 'font-weight': 600, fill: css('--orange')}, CT.zoneHigh));
+    svg.append(T({x: 0, y: y + bh / 2 + 7, 'font-size': 20, 'font-weight': 600, fill: css('--ink')}, CT.ruler));
+    const bar = el('g', {'clip-path': `url(#bar${id})`});
+    bar.append(el('rect', {x: xs[0], y, width: xs[1] - xs[0], height: bh, fill: css('--gray-fill')}));
+    bar.append(el('rect', {x: xs[1], y, width: x1 - xs[1] + 24, height: bh, fill: `url(#fillbar${id})`}));
+    [2, 3].forEach((i) => bar.append(el('line', {x1: xs[i], x2: xs[i], y1: y, y2: y + bh, stroke: css('--panel'), 'stroke-width': 2})));
+    svg.append(bar);
+    CT.ticks.forEach((t, i) => {
+      if (i === 1) return;
+      svg.append(T({x: xs[i] + (i ? 0 : 8), y: y + bh + 28, 'text-anchor': i ? 'middle' : 'start', 'font-size': 19, fill: css('--muted')}, t));
+    });
+    svg.append(T({x: x1 + 20, y: y + bh + 28, 'text-anchor': 'end', 'font-size': 19, fill: css('--muted')}, '以上'));
+    svg.append(el('line', {x1: xs[1], x2: xs[1], y1: y - 8, y2: H - 6, stroke: css('--ink'), 'stroke-width': 3, 'stroke-linecap': 'round'}));
+    const tagX = Math.max(xs[1] - 62, x0 + 66);
+    svg.append(el('rect', {x: tagX, y: y + bh + 8, width: 124, height: 32, rx: 16, fill: css('--ink')}));
+    svg.append(T({x: tagX + 62, y: y + bh + 30, 'text-anchor': 'middle', 'font-size': 19, 'font-weight': 600, fill: css('--on-hue')}, '20 万门槛'));
+    const fs = Math.min(24, Math.floor(unit * 0.23));
+    const chipFill = (v, i) => (v < 0 ? '--pink-fill' : i < 2 ? '--green-fill' : '--green-lit');
+    CT.lanes.forEach(([name, note, values], r) => {
+      const top = 140 + r * o.laneGap, ch = o.laneH;
+      svg.append(T({x: 0, y: top + ch / 2 - 4, 'font-size': 22, 'font-weight': 700, fill: css('--ink')}, name));
+      svg.append(T({x: 0, y: top + ch / 2 + 20, 'font-size': o.note, fill: css('--muted')}, note));
+      values.forEach((v, i) => {
+        const pad = 6, cx = xs[i] + pad, cw = xs[i + 1] - xs[i] - pad * 2 + (i === 3 ? 20 : 0);
+        svg.append(el('rect', {x: cx, y: top, width: cw, height: ch, rx: 12, fill: css(chipFill(v, i))}));
+        svg.append(T({x: cx + cw / 2, y: top + ch / 2 + fs * 0.36, 'text-anchor': 'middle', 'font-size': fs, 'font-weight': 700, fill: v < 0 ? css('--pink-ink') : `url(#val${id})`}, value(v)));
+      });
+    });
+    return svg;
+  }
+
+  const toolHtml = (t) => `<div class="tool ${t.cls}">
+      <div class="name">${t.name}</div><div class="does">${t.does}</div>
+      <div class="row before"><span class="tag">以前</span><span class="text">${t.before}</span></div>
+      <div class="row after"><span class="tag">现在</span><span class="text">${t.after}</span></div>
+      <div class="win"><b class="num g-${t.g}">${t.win}</b><span>${t.winNote}</span></div>
+    </div>`;
+
+  function compactBody(f) {
+    const L = CT.layouts[f.key];
+    const gauge = html('div', 'card d-green', px(L.gauge.box), `<div class="eyebrow">${CT.gaugeEyebrow}</div><h2>${CT.gauge}</h2>`);
+    gauge.append(gaugeSvg(L.gauge.svg, L.gauge.o, f.key));
+    const [lead, ...jobs] = CT.people;
+    const plugin = html('div', 'card d-violet', px(L.plugin), `<div class="eyebrow">${CT.pluginEyebrow}</div><h2>${CT.plugin}</h2>
+      <div class="tools" style="grid-template-columns:repeat(${L.toolCols}, 1fr)">${CT.tools.map(toolHtml).join('')}</div>
+      <div class="people"><b>${lead}</b>${jobs.map((j) => `<i>${j}</i>`).join('')}</div>`);
+    return [stats(CT.stats, ...L.stats), gauge, plugin];
+  }
+
+  /* ---------- super-agent: an architecture video with no tool and no headline figures ---------- */
+  const SA = {
+    title: 'DeepSeek Super-agent 总架构：五种事件怎么走',
+    sub: '跟着一条群消息走一遍：哪种要调用模型，哪种程序就挡下',
+    // The four parts an event can pass through, in the skill's colours by responsibility.
+    layers: [[false, '程序层', '', '不调用模型', 'teal'], [false, 'Router', '', '轻量模型', 'amber'], [false, 'Worker', '', '最强模型', 'green'], [false, 'Watchdog', '', '主系统之外', 'violet']],
+    eyebrow: '五种事件', heading: '五种事件，五种走法：哪些要调用模型',
+    // [event, where it comes from, what each part does with it; null where it never reaches that part]
+    events: [
+      ['闲聊噪音', '「中午去食堂还是点外卖？」· 非监听群', ['挡下', null, null, null]],
+      ['无需介入的讨论', '「新版本界面看着挺清爽」· 用户群', ['放行', '判断：不发言', null, null]],
+      ['新任务冷启动', '「切换会话时偶发白屏」· 缺陷反馈', ['放行', '决策、分派', '执行', null]],
+      ['后续事件直通', '「改用方案 B」· 同一个 PR 的评审评论', ['查表直通', null, '执行', null]],
+      ['Worker 跑偏', '定时消息触发一次巡检 · 没有外部事件', [null, null, null, '巡检，介入修复']],
+    ],
+    layouts: {
+      p34: {tiles: [{left: 48, top: 214, width: 984}, 2], card: {left: 48, top: 532, width: 984, height: 860}, name: 300, rowH: 112, gap: 26},
+      l43: {tiles: [{left: 48, top: 176, width: 1344}, 4], card: {left: 48, top: 339, width: 1344, height: 693}, name: 420, rowH: 84, gap: 18},
+      w169: {tiles: [{left: 48, top: 206, width: 1824}, 4], card: {left: 48, top: 369, width: 1824, height: 663}, name: 480, rowH: 80, gap: 18},
+      t916: {tiles: [{left: 48, top: 392, width: 984}, 2], card: {left: 48, top: 710, width: 984, height: 830}, name: 300, rowH: 108, gap: 24},
+    },
+  };
+  const HUE = ['teal', 'amber', 'green', 'violet'];
+
+  function superBody(f) {
+    const L = SA.layouts[f.key];
+    const card = html('div', 'card d-blue', px(L.card), `<div class="eyebrow">${SA.eyebrow}</div><h2>${SA.heading}</h2>`);
+    const m = html('div', 'matrix', {gridTemplateColumns: `${L.name}px repeat(4, 1fr)`, rowGap: L.gap + 'px'});
+    m.append(html('div'));
+    SA.layers.forEach(([, name], i) => m.append(html('div', `head h-${HUE[i]}`, null, name)));
+    for (const [name, from, cells] of SA.events) {
+      m.append(html('div', 'name', null, `<b>${name}</b><span>${from}</span>`));
+      cells.forEach((c, i) => m.append(html('div', c ? `cell on h-${HUE[i]}` : 'cell off', {height: L.rowH + 'px'}, c ?? '')));
+    }
+    card.append(m);
+    return [stats(SA.layers, ...L.tiles), card];
+  }
+
+  /* ---------- the template's parts alone ---------- */
+  function frameBody(f) {
+    const a = f.area;
+    const parts = [html('div', 'area', px({left: a.left, top: a.top, width: a.width, height: a.bottom - a.top}),
+      `<div>每个视频自己画的主图<small>用模板的积木：数字卡片、卡片（色点 + 标签 + 标题）、以前 / 现在、按列对比的表</small></div>`)];
+    if (f.bars) {
+      parts.push(html('div', 'bars', {top: 0, height: f.bars[0] + 'px'}, '抖音界面遮挡（约 220 px）'));
+      parts.push(html('div', 'bars', {bottom: 0, height: f.bars[1] + 'px'}, '抖音界面遮挡（约 380 px）'));
+    }
+    return parts;
+  }
+
+  const VIDEOS = {
+    compact: {title: CT.title, sub: CT.sub, body: compactBody},
+    super: {title: SA.title, sub: SA.sub, body: superBody},
+    frame: {title: '主标题：一行写清讲的是什么', sub: '副标题：一句话说明观众能看到什么', body: frameBody},
+  };
+
+  const SCALE = 0.5;
+  const sheet = document.getElementById('sheet');
+  function render(pick) {
+    const v = VIDEOS[pick];
+    sheet.innerHTML = '';
+    const titles = [];
+    for (const f of FRAMES) {
+      const wrap = html('div', null, null, `<div class="frame-label">${f.label}</div>`);
+      const holder = html('div', 'holder', {width: f.w * SCALE + 'px', height: f.h * SCALE + 'px'});
+      const c = html('div', 'cover', {width: f.w + 'px', height: f.h + 'px', transform: `scale(${SCALE})`});
+      const h1 = html('h1', null, {top: f.title.top + 'px', fontSize: f.title.size + 'px'}, v.title);
+      c.append(h1, html('div', 'sub', {top: f.sub.top + 'px', fontSize: f.sub.size + 'px'}, v.sub), ...v.body(f));
+      holder.append(c);
+      wrap.append(holder);
+      sheet.append(wrap);
+      titles.push([h1, f]);
+    }
+    // Each cover's title shrinks until it fits on one line between the 48 px margins; it never grows.
+    for (const [h1, f] of titles) h1.style.fontSize = Math.floor(f.title.size * Math.min(1, (f.w - 96) / h1.scrollWidth) * 2) / 2 + 'px';
+  }
+
+  const pick = document.getElementById('pick');
+  pick.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pick]');
+    if (!b) return;
+    for (const o of pick.querySelectorAll('[data-pick]')) o.setAttribute('aria-pressed', String(o === b));
+    render(b.dataset.pick);
+  });
+  document.fonts.ready.then(() => render('compact'));
+</script>
+</body>
+</html>
