@@ -5,7 +5,7 @@ Agent skills for making app demos, explainer videos and article figures. The ski
 | Skill | What it does |
 |---|---|
 | [`app-demo-video`](skills/app-demo-video/SKILL.md) | Makes app introduction videos with scenario animation, real interactions, narration and subtitles. English by default, with a Chinese narration option. |
-| [`video-tutorial`](skills/video-tutorial/SKILL.md) | Makes a video from an article or diagram, with Chinese narration, burned-in subtitles and two covers (3:4 and 4:3). |
+| [`video-tutorial`](skills/video-tutorial/SKILL.md) | Makes a video from an article or diagram, with Chinese narration, burned-in subtitles and a set of covers for each publishing platform you name: WeChat Channels (3:4 and 4:3), YouTube, Douyin and Xiaohongshu. |
 | [`article-figures`](skills/article-figures/SKILL.md) | Draws an article's diagrams, animated diagrams and cover with English text, as PNG and GIF files, and copies them into the article once you approve the preview. |
 | [`diagram-design`](skills/diagram-design/SKILL.md) | Rules for box-and-line diagrams: colours, step markers, lines and arrows. `video-tutorial` and `article-figures` follow them. |
 

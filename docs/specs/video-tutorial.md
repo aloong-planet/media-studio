@@ -28,7 +28,7 @@ The requirement list's row for the audience and the platforms names the platform
 
 ### video-tutorial::REQ-002 The frame of every cover
 
-The positions and sizes below are in pixels of the drawing size.
+The positions and sizes below are in pixels of the drawing size. Every cover has a margin of 48 px at its left and at its right edge.
 
 | Ratio | Title: top, largest size | Subtitle: top, size | Area: top to bottom |
 |---|---|---|---|
@@ -37,9 +37,9 @@ The positions and sizes below are in pixels of the drawing size.
 | 16:9 | 44, 66 | 124, 40 | 206 to 1032 |
 | 9:16 | 236, 56 | 304, 36 | 392 to 1540 |
 
-- video-tutorial::REQ-002/AC-01: The title is the video's title on one line, 48 px from the left edge. It is drawn at the ratio's largest size when that line fits between the 48 px margins; otherwise at the largest size, in steps of 0.5 px, at which it fits. It never wraps and is never larger than the largest size. Each cover sizes its own title.
+- video-tutorial::REQ-002/AC-01: The title is the video's title on one line, starting at the left margin. It is drawn at the ratio's largest size when that line fits between the margins; otherwise at the largest size, in steps of 0.5 px, at which it fits, however small that is. It never wraps and is never larger than the largest size. Each cover sizes its own title.
 - video-tutorial::REQ-002/AC-02: The subtitle is the video's subtitle on one line, at the ratio's position and size.
-- video-tutorial::REQ-002/AC-03: The area runs from 48 px on the left to 48 px from the right edge, between the ratio's top and bottom. The cover shows nothing else: no full diagram, no list of chapters and no banner.
+- video-tutorial::REQ-002/AC-03: The area runs from the left margin to the right margin, between the ratio's top and bottom. The cover shows nothing else: no full diagram, no list of chapters and no banner.
 
 ### video-tutorial::REQ-003 Each video draws its own main visual
 
@@ -53,9 +53,9 @@ The positions and sizes below are in pixels of the drawing size.
 These are judged by looking at the rendered covers, by the skill before it sends the preview and by the creator before the final confirmation.
 
 - video-tutorial::REQ-004/AC-01: The cover introduces the video's main point. Every statement on it is also made in the video, and every fact on it has a source, as the facts of the diagram and the script do.
-- video-tutorial::REQ-004/AC-02: A block's main finding is written as that block's heading.
+- video-tutorial::REQ-004/AC-02: A card's main finding is written as the card's heading.
 - video-tutorial::REQ-004/AC-03: No block says what another block on the same cover already says.
-- video-tutorial::REQ-004/AC-04: When the video introduces a tool or a change in how people work, the cover shows what it replaces as a before/after with a headline result, and what belongs to one tool or plugin is grouped in one card named after it. A video that introduces neither has no before/after.
+- video-tutorial::REQ-004/AC-04: When the video introduces a tool or a change in how people work, the cover shows what it replaces as a before/after with a headline result, and what belongs to one tool or plugin is grouped in one card whose label is its name. A video that introduces neither has no before/after.
 - video-tutorial::REQ-004/AC-05: When the video has figures to compare, they are laid out in a table read down its columns: each row named in plain words, with the original wording in small text under the name. Figures the video does not compare are not put in such a table. Every unit written on the cover is the unit of the figure it labels.
 - video-tutorial::REQ-004/AC-06: A block that stands for something in the video (a tool, a plugin, a part of the system, a path) has that thing's colour in the video: the colour of its box, or of its path. Number tiles use colour only to tell one tile from another.
 
@@ -86,8 +86,6 @@ Applies to: the list of platforms in a video project. `pnpm check` fails when th
 ## Failure modes and boundaries
 
 - A platform the table does not give, or a platform whose upload page asks for another ratio or size than the table: its cover is a change of the default requirements, as in video-tutorial::REQ-003/AC-02.
-- A title too long for its line at the ratio's largest size is drawn smaller, however small that makes it (video-tutorial::REQ-002/AC-01).
-- A main visual taller or wider than the area fails video-tutorial::QR-001/AC-02.
 
 ## Implementation Decisions
 
