@@ -1,3 +1,7 @@
+// The rules of the covers, without a browser. Not tested here: how src/check/Measure.tsx reads the rendered cover (the
+// rects it gives placementProblems, the gradient of each text) and which covers scripts/stills.mjs renders at what
+// scale. Those need a narrated project and a browser: check them by running pnpm stills on a project that names all
+// four platforms, once with each rule broken.
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {FRAMES, coversFor, fitTitle, placementProblems} from '../src/ui/platforms.ts';
