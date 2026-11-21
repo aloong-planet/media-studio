@@ -57,7 +57,7 @@ These are judged by looking at the rendered covers, by the skill before it sends
 - video-tutorial::REQ-004/AC-03: No block says what another block on the same cover already says.
 - video-tutorial::REQ-004/AC-04: When the video introduces a tool or a change in how people work, the cover shows what it replaces as a before/after with a headline result, and what belongs to one tool or plugin is grouped in one card whose label is its name. A video that introduces neither has no before/after.
 - video-tutorial::REQ-004/AC-05: When the video has figures to compare, they are laid out in a table read down its columns: each row named in plain words, with the original wording in small text under the name. Figures the video does not compare are not put in such a table. Every unit written on the cover is the unit of the figure it labels.
-- video-tutorial::REQ-004/AC-06: A block that stands for something in the video (a tool, a plugin, a part of the system, a path) has that thing's colour in the video: the colour of its box, or of its path. Number tiles use colour only to tell one tile from another.
+- video-tutorial::REQ-004/AC-06: A block that stands for something in the video (a tool, a plugin, a part of the system, a path) has that thing's colour in the video: the hue of its box, or the hue of its path's colour, which is the teal hue for a teal path, the violet hue for a violet path and the amber hue for an orange path. Number tiles use colour only to tell one tile from another.
 
 ### video-tutorial::REQ-005 The blocks
 
