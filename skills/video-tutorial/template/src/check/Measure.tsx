@@ -3,6 +3,7 @@
 import React, {useEffect} from 'react';
 import {continueRender, delayRender, getInputProps, useCurrentFrame} from 'remotion';
 import {DIAGRAM} from '../data/diagram';
+import {fontsLoaded} from '../fonts';
 import {pathSegments} from '../map/path';
 import {Cover, FRAMES, Placed, placementProblems} from '../ui/platforms';
 import {Rgb, blend, contrast, gradientStops, luminance, parse} from './colour';
@@ -233,7 +234,7 @@ const Measuring: React.FC<{tag: string; cover?: Cover}> = ({tag, cover}) => {
   const frame = useCurrentFrame();
   useEffect(() => {
     const handle = delayRender('measure');
-    document.fonts.ready.then(() => {
+    fontsLoaded.then(() => {
       const root = document.getElementById('frame')!;
       const problems: string[] = [];
       const isStatic = tag.startsWith('cover');

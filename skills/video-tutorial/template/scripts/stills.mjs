@@ -6,6 +6,7 @@ import {bundle} from '@remotion/bundler';
 import {getCompositions, openBrowser, renderStill, selectComposition} from '@remotion/renderer';
 import {PLATFORM_COVERS} from '../src/ui/platforms.ts';
 import {staleTimeline} from './gate.mjs';
+import {problemList} from './problems.mjs';
 
 const stale = staleTimeline(process.cwd());
 if (stale) {
@@ -39,13 +40,13 @@ const inputProps = {measure: true};
 // src/ui/Cover.tsx registers one composition per cover of the platforms src/data/cover.tsx names.
 const ids = new Set((await getCompositions(serveUrl, {inputProps, puppeteerInstance: browser, logLevel: 'error'})).map((c) => c.id));
 const shots = [
-  ...EVERY_COVER.filter((c) => ids.has(`cover-${c.file}`)).map((c) => ({id: `cover-${c.file}`, frame: 0, scale: c.scale, output: `out/${c.file}.png`})),
+  ...EVERY_COVER.filter((c) => ids.has(`cover-${c.file}`)).map((c) => ({id: `cover-${c.file}`, frame: 0, scale: c.scale, output: `out/${c.file}.png`, cover: true})),
   // Look at this still: the first frame must already be the finished title.
   {id: 'Walkthrough', frame: 0, scale: 1, output: 'out/stills/first-frame.png'},
   ...segments.map((s) => ({id: 'Walkthrough', frame: s.start + Math.max(0, s.dur - FROM_END), scale: 1, output: `out/stills/${s.id}.png`})),
 ];
-const found = new Map(); // A problem in the diagram shows in every frame: report it once, with where it was first seen.
-const problem = (text, shot) => found.has(text) || found.set(text, shot.output);
+const found = problemList();
+const problem = found.add;
 for (const shot of shots) {
   const composition = await selectComposition({serveUrl, id: shot.id, inputProps, puppeteerInstance: browser, logLevel: 'error'});
   let report = null;
@@ -67,6 +68,7 @@ for (const shot of shots) {
   for (const p of report?.problems ?? []) problem(p, shot);
 }
 await browser.close({silent: true});
-for (const [text, where] of found) console.log(`${where}: ${text}`);
-console.log(found.size ? `FAILED: ${found.size} problems` : `ALL PASSED: ${shots.length} frames`);
-process.exit(found.size ? 1 : 0);
+const lines = found.lines();
+for (const line of lines) console.log(line);
+console.log(lines.length ? `FAILED: ${lines.length} problems` : `ALL PASSED: ${shots.length} frames`);
+process.exit(lines.length ? 1 : 0);

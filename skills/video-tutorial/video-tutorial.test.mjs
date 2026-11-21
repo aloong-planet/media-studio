@@ -1,6 +1,10 @@
 // Run from this folder: node --test video-tutorial.test.mjs. The template and node are real; pnpm is a stub, so nothing is installed.
 // Not tested: the test pattern in the command pnpm check runs, which Node 22 and 24 need where Node 26 also takes a
 // folder. Check it by running that command on Node 22 and 24 in a project made by new-project.sh; both runs must pass.
+// Not tested either: the cover requirements carried by SKILL.md's steps or judged by looking at the covers, which no
+// code checks: video-tutorial::REQ-001/AC-02, video-tutorial::REQ-003/AC-01 as far as pnpm check does not cover it,
+// video-tutorial::REQ-003/AC-02, video-tutorial::REQ-003/AC-03, video-tutorial::REQ-003/AC-04 and video-tutorial::REQ-004.
+// Check them whenever SKILL.md's steps or its 封面要求 change, by reading each against the spec.
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
 import {chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync} from 'node:fs';

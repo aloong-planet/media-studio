@@ -2,7 +2,7 @@
 // the title on one line, the subtitle, and the area in which src/data/cover.tsx draws the video's main visual.
 import React, {useEffect, useRef, useState} from 'react';
 import {AbsoluteFill, continueRender, delayRender} from 'remotion';
-import '../fonts';
+import {fontsLoaded} from '../fonts';
 import {Measure} from '../check/Measure';
 import {CoverBody, PLATFORMS} from '../data/cover';
 import {C, DISPLAY, SANS} from '../theme';
@@ -16,7 +16,7 @@ const CoverFrame: React.FC<{cover: Cover}> = ({cover}) => {
   const [handle] = useState(() => delayRender('fit the title'));
   const [size, setSize] = useState<number | null>(null);
   useEffect(() => {
-    document.fonts.ready.then(() => {
+    fontsLoaded.then(() => {
       const t = title.current!;
       // In the drawing's pixels, so a preview scaled to the screen fits the title as the render does.
       const k = f.width / frame.current!.getBoundingClientRect().width;
